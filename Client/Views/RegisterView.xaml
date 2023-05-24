@@ -1,0 +1,115 @@
+﻿<UserControl xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+             x:Class="Client.Views.RegisterView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:viewmodels="clr-namespace:Client.ViewModels"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             d:DataContext="{d:DesignInstance Type=viewmodels:RegisterViewModel}"
+             mc:Ignorable="d">
+    <Grid>
+        <materialDesign:Card HorizontalAlignment="Center"
+                             VerticalAlignment="Center"
+                             Padding="15"
+                             UniformCornerRadius="15">
+            <StackPanel>
+                <TextBlock Text="РЕГИСТРАЦИЯ"
+                           HorizontalAlignment="Center"
+                           FontFamily="{DynamicResource MahApps.Fonts.Family.Header}"
+                           FontSize="18" />
+                <Grid Margin="15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <Label Content="Логин:"
+                           HorizontalAlignment="Right" />
+                    <Label Grid.Row="1"
+                           Content="Пароль:"
+                           HorizontalAlignment="Right" />
+                    <Label Grid.Row="2"
+                           Content="Повтор:"
+                           HorizontalAlignment="Right" />
+                    <Label Grid.Row="3"
+                           Content="Имя:"
+                           HorizontalAlignment="Right" />
+                    <Label Grid.Row="4"
+                           Content="Фамилия:"
+                           HorizontalAlignment="Right" />
+                    <Label Grid.Row="5"
+                           Content="Пол:"
+                           HorizontalAlignment="Right" />
+                    <Label Grid.Row="6"
+                           Content="Дата рождения:"
+                           HorizontalAlignment="Right" />
+                    <TextBox Grid.Column="1"
+                             Text="{Binding Username}"
+                             MinWidth="200" />
+                    <ContentControl Grid.Column="1"
+                                    Grid.Row="1"
+                                    Content="{Binding PasswordField}"
+                                    IsTabStop="False"
+                                    Focusable="False" />
+                    <TextBox Grid.Column="1"
+                             Grid.Row="1"
+                             Text="{Binding Password}"
+                             Visibility="{Binding PasswordVisibility}" />
+                    <ContentControl Grid.Column="1"
+                                    Grid.Row="2"
+                                    Content="{Binding RepeatPasswordField}"
+                                    IsTabStop="False"
+                                    Focusable="False"/>
+                    <TextBox Grid.Column="1"
+                             Grid.Row="2"
+                             Text="{Binding RepeatPassword}"
+                             Visibility="{Binding PasswordVisibility}" />
+                    <TextBox Grid.Column="1"
+                             Grid.Row="3"
+                             Text="{Binding Firstname}" />
+                    <TextBox Grid.Column="1"
+                             Grid.Row="4"
+                             Text="{Binding Lastname}" />
+                    <ComboBox Grid.Column="1"
+                              Grid.Row="5"
+                              ItemsSource="{Binding GendersWrappers}"
+                              SelectedItem="{Binding SelectedGenderWrapper, Mode=TwoWay}" />
+                    <DatePicker Grid.Column="1"
+                                Grid.Row="6"
+                                SelectedDate="{Binding Birthdate}"
+                                Language="ru" />
+                </Grid>
+                <ContentControl Content="{Binding PasswordVisibilitySwitcher}"
+                                HorizontalAlignment="Center"
+                                IsTabStop="False"
+                                Focusable="False" />
+                <Button Content="Зарегистрироваться"
+                        Style="{StaticResource MaterialDesignPaperSecondaryDarkButton}"
+                        Command="{Binding RegisterCommand}"
+                        IsDefault="True" />
+                <TextBlock Text="{Binding Message}"
+                           Visibility="{Binding MessageVisibility}"
+                           Foreground="DarkRed" />
+                <TextBlock HorizontalAlignment="Center"
+                           Margin="15, 15, 15, -15">
+                    <Hyperlink Command="{Binding GoAuthCommand}">
+                        Авторизация
+                    </Hyperlink>
+                </TextBlock>
+            </StackPanel>
+            <materialDesign:Card.Effect>
+                <DropShadowEffect ShadowDepth="0"
+                                  BlurRadius="10" />
+            </materialDesign:Card.Effect>
+        </materialDesign:Card>
+    </Grid>
+</UserControl>
