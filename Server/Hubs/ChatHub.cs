@@ -28,7 +28,6 @@ public class ChatHub : Hub
             tmpUsr.Chats = null;
         }
 
-        var chatListAvailableCurrentUser = db.Chats.Where(c => c.Users.Any(u => u.Id == currentUser.Id)).ToList();
 
         Data data = new()
         {
