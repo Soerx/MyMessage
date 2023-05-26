@@ -85,9 +85,10 @@
                                                        Kind="UserSquare" />
                         </Controls:HamburgerMenuIconItem.Icon>
                     </Controls:HamburgerMenuIconItem>
-                    <Controls:HamburgerMenuIconItem Label="Диалоги">
+                    <Controls:HamburgerMenuIconItem Label="Чаты"
+                                                    Command="{Binding GoChatsCommand}">
                         <Controls:HamburgerMenuIconItem.Icon>
-                            <Controls:Badged Badge="{Binding UnreadMessagesCount}"
+                            <Controls:Badged Badge="{Binding ChatsWithUnreadMessagesCount}"
                                              HorizontalAlignment="Center"
                                              VerticalAlignment="Center"
                                              BadgePlacementMode="TopLeft">
@@ -99,7 +100,8 @@
                             </Controls:Badged>
                         </Controls:HamburgerMenuIconItem.Icon>
                     </Controls:HamburgerMenuIconItem>
-                    <Controls:HamburgerMenuIconItem Label="Настройки">
+                    <Controls:HamburgerMenuIconItem Label="Настройки"
+                                                    Command="{Binding GoSettingCommand}">
                         <Controls:HamburgerMenuIconItem.Icon>
                             <iconPacks:PackIconUnicons Width="22"
                                                        Height="22"
@@ -137,8 +139,17 @@
                 <DataTemplate DataType="{x:Type viewmodels:ProfileViewModel}">
                     <views:ProfileView />
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type viewmodels:UsersViewModel}">
-                    <views:UsersView />
+                <DataTemplate DataType="{x:Type viewmodels:UsersListViewModel}">
+                    <views:UsersListView />
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type viewmodels:ChatsListViewModel}">
+                    <views:ChatsListView />
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type viewmodels:ChatViewModel}">
+                    <views:ChatView />
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type viewmodels:SettingViewModel}">
+                    <views:SettingView />
                 </DataTemplate>
             </ContentControl.Resources>
         </ContentControl>

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Server.Models;
 
 namespace Server.Hubs;
@@ -14,188 +15,284 @@ public class ChatHub : Hub
             return;
 
         using ApplicationContext db = new();
-        db.Ranks.Load();
         db.Users.Load();
+        User? currentUser = db.Users.SingleOrDefault(u => u.Username == Context.UserIdentifier);
+
+        if (currentUser is null)
+            return;
+
+        db.Ranks.Load();
         db.Chats.Load();
-        db.MessagesContents.Load();
         db.Messages.Load();
-        var currentUser = db.Users.First(u => u.Username == Context.UserIdentifier);
-        var userListWithoutCurrentUser = db.Users.ToList();
+        List<User> userListWithoutCurrentUser = db.Users.ToList();
         userListWithoutCurrentUser.Remove(currentUser);
 
-        foreach (var tmpUsr in  userListWithoutCurrentUser)
+        List<Chat> chatListAvailableCurrentUser = db.Chats.Where(c => c.Users.Any(u => u.Id == currentUser.Id)).Include(c => c.Users).Include(c => c.Messages).ToList();
+
+        foreach (Chat cht in chatListAvailableCurrentUser)
         {
-            tmpUsr.Chats = null;
+            foreach (User usr in cht.Users)
+            {
+                usr.Chats = null;
+            }
         }
 
+        foreach (Chat cht in chatListAvailableCurrentUser)
+        {
+            if (cht.Messages is not null)
+            {
+                foreach (Message msg in cht.Messages)
+                {
+                    msg.Chat = null;
+                    msg.Sender.Chats = null;
+                    msg.Content = db.Messages.Include(m => m.Content).First(m => m.Id == msg.Id).Content;
+                }
+            }
+        }
 
         Data data = new()
         {
             Users = userListWithoutCurrentUser,
-            Messages = db.Messages,
             Chats = chatListAvailableCurrentUser,
         };
 
         await Clients.Caller.SendAsync("SyncData", data);
     }
 
-    public async Task SendMessage(string messageText, User? receiver = null, Chat? chat = null)
+    public async Task SendMessage(string messageText, User? receiver = null, Chat? destinationChat = null)
     {
-        if (Context.UserIdentifier is null)
+        if (Context.UserIdentifier is null || messageText is null)
             return;
 
-        if (receiver is null && chat is null)
+        if (receiver is null && destinationChat is null)
             return;
 
         using ApplicationContext db = new();
         db.Users.Load();
-        var user = db.Users.First(u => u.Username == Context.UserIdentifier);
+        var dbUsers = db.Users.Include(u => u.Chats).Include(u => u.Rank);
 
-        if (chat is null && receiver is not null)
+        User? sender = dbUsers.SingleOrDefault(u => u.Username == Context.UserIdentifier);
+        User? realReceiver = null;
+
+        if (receiver is not null)
+            realReceiver = dbUsers.SingleOrDefault(u => u.Id == receiver.Id);
+
+        if (sender is null)
+            return;
+
+        db.Chats.Load();
+        var dbChats = db.Chats.Include(c => c.Users).Include(c => c.Messages);
+
+        if (destinationChat is not null)
         {
-            db.Chats.Load();
-            var foundChats = db.Chats.Where(c => c.Users.Any(u => u.Id == receiver.Id) && c.Users.Count == 2);
+            Chat? realChat = dbChats.SingleOrDefault(c => c.Id == destinationChat.Id);
 
-            if (foundChats.Any(c => c.Users.Any(u => u.Id == user.Id)))
+            if (realChat is null || realChat.Users.Any(u => u.Id == sender.Id) is false)
+                return;
+
+            destinationChat = realChat;
+        }
+        else if (realReceiver is not null)
+        {
+            int dialogUsersCount = 2;
+            var foundChatsList = dbChats.Where(c => c.Users.Any(u => u.Id == sender.Id) && c.Users.Count == dialogUsersCount);
+            List<Chat> senderChatsList = dbChats.Where(c => c.Users.Any(u => u.Id == sender.Id)).ToList();
+            List<Chat> senderDialogsList = senderChatsList.Where(c => c.Users.Count == dialogUsersCount).ToList();
+            destinationChat = senderDialogsList.SingleOrDefault(c => c.Users.Any(u => u.Id == realReceiver.Id));
+
+            if (destinationChat is null)
             {
-                chat = foundChats.First(c => c.Users.Any(u => u.Id == user.Id));
-            }
-            else
-            {
-                chat = new Chat()
+                destinationChat = new Chat
                 {
                     Users = new List<User>()
+                    {
+                        sender,
+                        realReceiver
+                    }
                 };
 
-                chat.Users.Add(receiver);
-                chat.Users.Add(user);
-                db.Chats.Add(chat);
+                db.Chats.Add(destinationChat);
+                db.SaveChanges();
 
-                foreach (var u in chat.Users)
+                var sendingUsersData = new List<User>(destinationChat.Users);
+                var temp = new List<User>();
+
+                foreach (var user in sendingUsersData)
                 {
-                    await Clients.User(u.Username).SendAsync("ReceiveChatData", chat);
+                    temp.Add(user);
+                    user.Chats = null;
                 }
+
+                var sendingChatData = new Chat()
+                {
+                    Users = sendingUsersData
+                };
+
+                foreach (var u in destinationChat.Users)
+                {
+                    await Clients.User(u.Username).SendAsync("ReceiveChatData", sendingChatData);
+                }
+
+                sender.Chats ??= new List<Chat>();
             }
         }
 
-        if (chat is not null)
+        if (destinationChat is not null)
         {
             var msgContent = new MessageContent()
             {
                 Text = messageText
             };
 
-            db.MessagesContents.Add(msgContent);
-
             var msg = new Message()
             {
-                Chat = chat,
+                Chat = destinationChat,
                 Content = msgContent,
                 Created = DateTime.Now,
-                Sender = user,
+                Sender = sender,
                 IsReceived = false,
                 IsRead = false,
                 IsEdited = false,
                 IsDeleted = false
             };
 
-            db.Messages.Add(msg);
+            destinationChat.Messages ??= new List<Message>();
+            destinationChat.Messages.Add(msg);
             db.SaveChanges();
 
-            foreach (var u in chat.Users)
+
+            var sendingUserData = new User()
             {
-                await Clients.User(u.Username).SendAsync("ReceiveMessageData", msg);
+                Id = sender.Id,
+                Username = sender.Username,
+                Birthdate = sender.Birthdate,
+                Firstname = sender.Firstname,
+                Lastname = sender.Lastname,
+                Gender = sender.Gender,
+                Image = sender.Image,
+                LastActivity = sender.LastActivity,
+                Rank = sender.Rank,
+                IsOnline = sender.IsOnline,
+                Status = sender.Status,
+            };
+
+            var sendingMessageData = new Message()
+            {
+                Content = msg.Content,
+                Created = msg.Created,
+                Sender = sendingUserData,
+                IsReceived = msg.IsReceived,
+                IsRead = msg.IsRead,
+                IsEdited = msg.IsEdited,
+                IsDeleted = msg.IsDeleted
+            };
+
+            foreach (User usr in destinationChat.Users)
+            {
+                await Clients.User(usr.Username).SendAsync("ReceiveMessageData", sendingMessageData);
             }
         }
     }
 
     public async Task UpdateMessage(Message updatedMessage)
     {
-        if (Context.UserIdentifier is null)
+        if (Context.UserIdentifier is null || updatedMessage is null)
             return;
 
         using ApplicationContext db = new();
-        db.Chats.Load();
         db.Users.Load();
-        db.Messages.Load();
-        var sender = db.Users.First(u => u.Username == Context.UserIdentifier);
+        User? currentUser = db.Users.SingleOrDefault(u => u.Username == Context.UserIdentifier);
 
-        if (db.Messages.Any(m => m.Id == updatedMessage.Id))
+        if (currentUser is null)
+            return;
+
+        db.Chats.Load();
+        Chat? destinationChat = db.Chats.SingleOrDefault(c => c.Id == updatedMessage.Chat.Id);
+
+        if (destinationChat is null || destinationChat.Messages is null)
+            return;
+
+        Message? realMessage = destinationChat.Messages.SingleOrDefault(m => m.Id == updatedMessage.Id);
+
+        if (realMessage is null)
+            return;
+
+        if (realMessage.Sender.Id == currentUser.Id)
         {
-            if (db.Messages.Any(m => m.Sender.Id == sender.Id))
-            {
-                var msg = db.Messages.First(m => m.Id == updatedMessage.Id);
-                msg.IsEdited = true;
-                msg.IsDeleted = msg.IsDeleted ? true : updatedMessage.IsDeleted;
-                msg.Content = updatedMessage.Content;
-                db.SaveChanges();
+            realMessage.IsEdited = true;
+            realMessage.IsDeleted = realMessage.IsDeleted ? realMessage.IsDeleted : updatedMessage.IsDeleted;
+            realMessage.Content = updatedMessage.Content;
+            db.SaveChanges();
 
-                foreach (var user in msg.Chat.Users)
-                {
-                    await Clients.User(user.Username).SendAsync("ReceiveMessageData", msg);
-                }
+            foreach (User usr in realMessage.Chat.Users)
+            {
+                await Clients.User(usr.Username).SendAsync("ReceiveMessageData", realMessage);
             }
-            else if (db.Messages.Any(m => m.Chat.Users.Any(u => u.Id == sender.Id)))
+        }
+        else if (destinationChat.Users.Any(u => u.Id == currentUser.Id))
+        {
+            realMessage.IsRead = realMessage.IsRead ? realMessage.IsRead : realMessage.IsRead;
+            realMessage.IsReceived = true;
+            db.SaveChanges();
+
+            foreach (User usr in realMessage.Chat.Users)
             {
-                var msg = db.Messages.First(m => m.Id == updatedMessage.Id);
-                msg.IsRead = msg.IsRead ? true : msg.IsRead;
-                msg.IsReceived = true;
-                db.SaveChanges();
+                await Clients.User(usr.Username).SendAsync("ReceiveMessageData", realMessage);
 
-                foreach (var user in msg.Chat.Users)
-                {
-                    await Clients.User(user.Username).SendAsync("ReceiveMessageData", msg);
-
-                }
             }
         }
     }
 
     public async Task UpdateChat(Chat updatedChat)
     {
-        if (Context.UserIdentifier is null)
+        if (Context.UserIdentifier is null || updatedChat is null)
             return;
 
         using ApplicationContext db = new();
-        db.Chats.Load();
         db.Users.Load();
+        User? currentUser = db.Users.SingleOrDefault(u => u.Username == Context.UserIdentifier);
 
-        if (db.Chats.Any(c => c.Id == updatedChat.Id))
+        if (currentUser is null)
+            return;
+
+        db.Chats.Load();
+        Chat? realChat = db.Chats.SingleOrDefault(c => c.Id == updatedChat.Id);
+
+        if (realChat is null)
+            return;
+
+        if (realChat.Users.Any(u => u.Username == currentUser.Username))
         {
-            var foundChat = db.Chats.First(c => c.Id == updatedChat.Id);
-            var user = db.Users.First(u => u.Username == Context.UserIdentifier);
-            
-            if (foundChat.Users.Any(u => u.Username == user.Username))
-            {
-                foundChat.Name = updatedChat.Name;
-                db.SaveChanges();
+            realChat.Name = updatedChat.Name;
+            db.SaveChanges();
 
-                foreach (var u in foundChat.Users)
-                {
-                    await Clients.User(u.Username).SendAsync("ReceiveChatData", foundChat);
-                }
+            foreach (User usr in realChat.Users)
+            {
+                await Clients.User(usr.Username).SendAsync("ReceiveChatData", realChat);
             }
         }
     }
 
     public async Task UpdateCurrentUser(User updatedUser)
     {
-        if (Context.UserIdentifier is null)
+        if (Context.UserIdentifier is null || updatedUser is null)
             return;
 
         using ApplicationContext db = new();
-        db.Chats.Load();
         db.Users.Load();
-        var user = db.Users.First(u => u.Username == Context.UserIdentifier);
-        user.Firstname = updatedUser.Firstname;
-        user.Lastname = updatedUser.Lastname;
-        user.Gender = updatedUser.Gender;
-        user.Birthdate = updatedUser.Birthdate;
-        user.Status = updatedUser.Status;
-        user.Image = updatedUser.Image;
+        User? currentUser = db.Users.SingleOrDefault(u => u.Username == Context.UserIdentifier);
+
+        if (currentUser is null || currentUser.Id != updatedUser.Id)
+            return;
+
+        currentUser.Firstname = updatedUser.Firstname;
+        currentUser.Lastname = updatedUser.Lastname;
+        currentUser.Gender = updatedUser.Gender;
+        currentUser.Birthdate = updatedUser.Birthdate;
+        currentUser.Status = updatedUser.Status;
+        currentUser.Image = updatedUser.Image;
         db.SaveChanges();
-        user.Chats = null;
-        await Clients.All.SendAsync("ReceiveUserData", user);
+        await Clients.All.SendAsync("ReceiveUserData", currentUser);
     }
 
     public override Task OnConnectedAsync()

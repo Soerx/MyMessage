@@ -37,7 +37,7 @@ public class User : BindableBase
         get => _rank;
         set
         {
-            _rank = value ?? throw new ArgumentNullException(nameof(Rank));
+            _rank = value;
             RaisePropertyChanged(nameof(Rank));
         }
     }

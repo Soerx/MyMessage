@@ -4,7 +4,7 @@ public class Message
 {
     public int Id { get; set; }
     public User Sender { get; set; } = null!;
-    public Chat Chat { get; set; } = null!;
+    public Chat? Chat { get; set; }
     public MessageContent Content { get; set; } = null!;
     public DateTime Created { get; set; }
     public bool IsEdited { get; set; }

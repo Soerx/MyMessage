@@ -3,6 +3,7 @@ using Client.Tools;
 using Microsoft.AspNetCore.SignalR.Client;
 using Prism.Mvvm;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,7 +19,6 @@ namespace Client.Services
         private HubConnection _connection = null!;
         private string? _token;
         private ObservableCollection<Chat> _chats = null!;
-        private ObservableCollection<Message> _messages = null!;
         private ObservableCollection<User> _users = null!;
 
         public ObservableCollection<Chat> Chats
@@ -28,16 +28,6 @@ namespace Client.Services
             {
                 _chats = value;
                 RaisePropertyChanged(nameof(Chats));
-            }
-        }
-
-        public ObservableCollection<Message> Messages
-        {
-            get => _messages;
-            private set
-            {
-                _messages = value;
-                RaisePropertyChanged(nameof(Messages));
             }
         }
 
@@ -57,7 +47,6 @@ namespace Client.Services
             SetUpService();
             Chats = new ObservableCollection<Chat>();
             Users = new ObservableCollection<User>();
-            Messages = new ObservableCollection<Message>();
         }
 
         public void Dispose()
@@ -73,11 +62,31 @@ namespace Client.Services
             GC.SuppressFinalize(this);
         }
 
-        public async Task SendMessage(string message, User to)
+        public async Task SendMessage(string message, User receiver)
         {
             try
             {
-                await _connection.InvokeAsync("SendMessage", message, to);
+                await _connection.InvokeAsync("SendMessage", message, receiver, null);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"{ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        public async Task SendMessage(string message, Chat destinationChat)
+        {
+            if (destinationChat.Messages is not null)
+            {
+                foreach (Message msg in destinationChat.Messages)
+                {
+                    msg.Chat = null;
+                }
+            }
+
+            try
+            {
+                await _connection.InvokeAsync("SendMessage", message, null, destinationChat);
             }
             catch (Exception ex)
             {
@@ -149,18 +158,38 @@ namespace Client.Services
 
         private void SyncData(Data data)
         {
+            foreach (Chat cht in data.Chats)
+            {
+                if (cht.Messages is not null)
+                {
+                    foreach (Message msg in cht.Messages)
+                    {
+                        msg.Chat = cht;
+                    }
+                }
+            }
+
             Users = new ObservableCollection<User>(data.Users);
-            Messages = new ObservableCollection<Message>(data.Messages);
             Chats = new ObservableCollection<Chat>(data.Chats);
         }
 
         private void ReceiveMessageData(Message message)
         {
+            if (message is null)
+                return;
+
             Application.Current.Dispatcher.Invoke(() =>
             {
-                if (Messages.Any(m => m.Id == message.Id))
+                Chat? destinationChat = Chats.SingleOrDefault(c => c.Id == message.Chat.Id);
+
+                if (destinationChat is null)
+                    return;
+
+                destinationChat.Messages ??= new ObservableCollection<Message>();
+                var foundMsg = destinationChat.Messages.SingleOrDefault(m => m.Id == message.Id);
+
+                if (foundMsg is not null)
                 {
-                    var foundMsg = Messages.First(m => m.Id == message.Id);
                     foundMsg.IsReceived = message.IsReceived;
                     foundMsg.IsRead = message.IsRead;
                     foundMsg.IsEdited = message.IsEdited;
@@ -169,7 +198,7 @@ namespace Client.Services
                 }
                 else
                 {
-                    Messages.Add(message);
+                    destinationChat.Messages.Add(message);
                     MessageReceived?.Invoke(message);
                 }
             });
@@ -177,13 +206,16 @@ namespace Client.Services
 
         private void ReceiveChatData(Chat chat)
         {
+            if (chat is null)
+                return;
+
             Application.Current.Dispatcher.Invoke(() =>
             {
-                if (Chats.Any(c => c.Id == chat.Id))
+                var foundChat = Chats.SingleOrDefault(c => c.Id == chat.Id);
+
+                if (foundChat is not null)
                 {
-                    var foundChat = Chats.First(c => c.Id == chat.Id);
                     foundChat.Name = chat.Name;
-                    foundChat.Owner = chat.Owner;
                 }
                 else
                 {
@@ -194,11 +226,15 @@ namespace Client.Services
 
         private void ReceiveUserData(User user)
         {
+            if (user is null)
+                return;
+
             Application.Current.Dispatcher.Invoke(() =>
             {
-                if (Users.Any(u => u.Id == user.Id))
+                var foundUser = Users.SingleOrDefault(u => u.Id == user.Id);
+
+                if (foundUser is not null)
                 {
-                    var foundUser = Users.First(u => u.Id == user.Id);
                     foundUser.Rank = user.Rank;
                     foundUser.Firstname = user.Firstname;
                     foundUser.Lastname = user.Lastname;

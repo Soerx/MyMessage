@@ -19,21 +19,26 @@ public class HomeViewModel : BindableBase, IDisposable
     public User? CurrentUser => App.Instance.CurrentUser;
     public BindableBase? CurrentViewModel => _homeNavigationStore.CurrentViewModel;
 
-    public int? UnreadMessagesCount => _chat.Messages.Where(m => m.IsRead == false).Count();
+    public int? ChatsWithUnreadMessagesCount => _chat.Chats.Where(c => c.UnreadMessagesCount > 0).Count();
 
     public ICommand GoProfileCommand { get; }
     public ICommand GoUsersCommand { get; }
+    public ICommand GoChatsCommand { get; }
+    public ICommand GoSettingCommand { get; }
     public ICommand ExitCommand { get; }
 
     public HomeViewModel(NavigationStore navigationStore, string token)
     {
         _mainNavigationStore = navigationStore;
         _chat = new ChatService(token);
+        _chat.MessageReceived += MessageReceived;
         _homeNavigationStore = new NavigationStore();
         _homeNavigationStore.ViewModelUpdated += HomeViewModelUpdated;
         _homeNavigationStore.CurrentViewModel = new ProfileViewModel(CurrentUser);
         GoProfileCommand = new RelayCommand(GoProfile);
         GoUsersCommand = new RelayCommand(GoUsers);
+        GoChatsCommand = new RelayCommand(GoChats);
+        GoSettingCommand = new RelayCommand(GoSetting);
         ExitCommand = new RelayCommand(Exit);
     }
 
@@ -47,9 +52,15 @@ public class HomeViewModel : BindableBase, IDisposable
         GC.SuppressFinalize(this);
     }
 
+    private void MessageReceived(Message message)
+    {
+        RaisePropertyChanged(nameof(ChatsWithUnreadMessagesCount));
+    }
+
     private void HomeViewModelUpdated()
     {
         RaisePropertyChanged(nameof(CurrentViewModel));
+        RaisePropertyChanged(nameof(ChatsWithUnreadMessagesCount));
     }
 
     private void GoProfile(object parameter)
@@ -59,7 +70,17 @@ public class HomeViewModel : BindableBase, IDisposable
 
     private void GoUsers(object parameter)
     {
-        _homeNavigationStore.CurrentViewModel = new UsersViewModel(_homeNavigationStore, _chat);
+        _homeNavigationStore.CurrentViewModel = new UsersListViewModel(_homeNavigationStore, _chat);
+    }
+
+    private void GoChats(object parameter)
+    {
+        _homeNavigationStore.CurrentViewModel = new ChatsListViewModel(_homeNavigationStore, _chat);
+    }
+
+    private void GoSetting(object parameter)
+    {
+        _homeNavigationStore.CurrentViewModel = new SettingViewModel();
     }
 
     private void Exit(object parameter)

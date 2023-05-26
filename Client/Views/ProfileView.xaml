@@ -55,7 +55,7 @@
                             <TextBlock.Text>
                                 <MultiBinding StringFormat="{}Дата рождения: {0:dd.MM.yyy} ({1} лет)">
                                     <Binding Path="User.Birthdate" />
-                                    <Binding Path="Age" />
+                                    <Binding Path="User.Age" />
                                 </MultiBinding>
                             </TextBlock.Text>
                         </TextBlock>

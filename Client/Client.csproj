@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Assets\chat.png" />
     <None Remove="user.png" />
   </ItemGroup>
 
@@ -43,6 +44,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Assets\chat.png" />
     <Resource Include="Assets\user.png" />
   </ItemGroup>
 

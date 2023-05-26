@@ -31,7 +31,7 @@ public class Message : BindableBase
         get => _chat;
         set
         {
-            _chat = value ?? throw new ArgumentNullException(nameof(Chat));
+            _chat = value;
             RaisePropertyChanged(nameof(Chat));
         }
     }
