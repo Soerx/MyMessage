@@ -6,5 +6,5 @@ namespace Client;
 public partial class App : Application
 {
     public static App Instance => (App)Current;
-    public User? CurrentUser { get; set; }
+    public User CurrentUser { get; set; } = null!;
 }

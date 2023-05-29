@@ -1,16 +1,15 @@
-п»їusing Client.Tools;
+using Client.Tools;
 using Prism.Mvvm;
 using System;
 using System.ComponentModel;
-using System.Windows;
 using System.Windows.Media.Imaging;
+using System.Windows;
 
 namespace Client.Models;
 
 public class User : BindableBase
 {
     private string _username = null!;
-    private Rank _rank = null!;
     private string _firstname = null!;
     private string _lastname = null!;
     private Gender _gender;
@@ -27,18 +26,8 @@ public class User : BindableBase
         get => _username;
         set
         {
-            _username = value ?? throw new ArgumentNullException(nameof(Username));
+            _username = value;
             RaisePropertyChanged(nameof(Username));
-        }
-    }
-
-    public Rank Rank
-    {
-        get => _rank;
-        set
-        {
-            _rank = value;
-            RaisePropertyChanged(nameof(Rank));
         }
     }
 
@@ -47,7 +36,7 @@ public class User : BindableBase
         get => _firstname;
         set
         {
-            _firstname = value ?? throw new ArgumentNullException(nameof(Firstname));
+            _firstname = value;
             RaisePropertyChanged(nameof(Firstname));
         }
     }
@@ -57,7 +46,7 @@ public class User : BindableBase
         get => _lastname;
         set
         {
-            _lastname = value ?? throw new ArgumentNullException(nameof(Lastname));
+            _lastname = value;
             RaisePropertyChanged(nameof(Lastname));
         }
     }
@@ -121,11 +110,11 @@ public class User : BindableBase
         {
             _isOnline = value;
             RaisePropertyChanged(nameof(IsOnline));
-            RaisePropertyChanged(nameof(OnlineVisibility));
+            RaisePropertyChanged(nameof(DisplayOnline));
         }
     }
 
-    public int? OnlineVisibility => IsOnline ? 0 : null;
+    public int? DisplayOnline => IsOnline ? 0 : null;
 
     public DateTime LastActivity
     {
@@ -148,10 +137,10 @@ public class User : BindableBase
 
 public enum Gender
 {
-    [Description("РќРµ СѓРєР°Р·Р°РЅ")]
+    [Description("Не указан")]
     Unspecified,
-    [Description("РњСѓР¶СЃРєРѕР№")]
+    [Description("Мужской")]
     Male,
-    [Description("Р–РµРЅСЃРєРёР№")]
+    [Description("Женский")]
     Female
 }

@@ -1,99 +1,120 @@
-﻿using Prism.Mvvm;
+using Prism.Mvvm;
 using System;
+using System.Text.Json.Serialization;
+using System.Windows;
 
 namespace Client.Models;
 
 public class Message : BindableBase
 {
-    private User _sender = null!;
-    private Chat _chat = null!;
-    private MessageContent _content = null!;
-    private DateTime _created;
     private bool _isEdited;
     private bool _isReceived;
     private bool _isRead;
     private bool _isDeleted;
+    private Action<Message> _notifyMessageUpdated = null!;
 
     public int Id { get; set; }
-
-    public User Sender
-    {
-        get => _sender;
-        set
-        {
-            _sender = value ?? throw new ArgumentNullException(nameof(Sender));
-            RaisePropertyChanged(nameof(Sender));
-        }
-    }
-
-    public Chat Chat
-    {
-        get => _chat;
-        set
-        {
-            _chat = value;
-            RaisePropertyChanged(nameof(Chat));
-        }
-    }
-
-    public MessageContent Content
-    {
-        get => _content;
-        set
-        {
-            _content = value ?? throw new ArgumentNullException(nameof(Content));
-            RaisePropertyChanged(nameof(Content));
-        }
-    }
-
-    public DateTime Created
-    {
-        get => _created;
-        set
-        {
-            _created = value;
-            RaisePropertyChanged(nameof(Created));
-        }
-    }
+    public string SenderUsername { get; set; } = null!;
+    public string ReceiverUsername { get; set; } = null!;
+    public int ContentId { get; set; }
+    public DateTime Created { get; set; }
 
     public bool IsEdited
     {
         get => _isEdited;
         set
         {
-            _isEdited = value;
-            RaisePropertyChanged(nameof(IsEdited));
+            if (IsEdited is false && value == true)
+            {
+                _isEdited = value;
+                RaisePropertyChanged(nameof(IsEdited));
+                RaisePropertyChanged(nameof(EditedMarkerVisibility));
+                _notifyMessageUpdated?.Invoke(this);
+            }
         }
     }
+
+    public Visibility EditedMarkerVisibility => IsEdited ? Visibility.Visible : Visibility.Collapsed;
 
     public bool IsReceived
     {
         get => _isReceived;
         set
         {
-            _isReceived = value;
-            RaisePropertyChanged(nameof(IsReceived));
+            if (IsReceived is false && value == true)
+            {
+                _isReceived = value;
+                RaisePropertyChanged(nameof(IsReceived));
+                RaisePropertyChanged(nameof(ReceivedMarkerVisibility));
+            }
         }
     }
+
+    public Visibility ReceivedMarkerVisibility => IsReceived && App.Instance.CurrentUser.Username == SenderUsername ? Visibility.Visible : Visibility.Collapsed;
 
     public bool IsRead
     {
         get => _isRead;
         set
         {
-            _isRead = value;
-            RaisePropertyChanged(nameof(IsRead));
+            if (IsRead is false && value == true)
+            {
+                _isRead = true;
+                RaisePropertyChanged(nameof(IsRead));
+                RaisePropertyChanged(nameof(ReadMarkerVisibility));
+                RaisePropertyChanged(nameof(DisplayNotReadMarker));
+                _notifyMessageUpdated?.Invoke(this);
+            }
         }
     }
+
+    public Visibility ReadMarkerVisibility => IsRead && App.Instance.CurrentUser.Username == SenderUsername ? Visibility.Visible : Visibility.Collapsed;
+    public int? DisplayNotReadMarker => IsRead || App.Instance.CurrentUser.Username == ReceiverUsername ? null : 0;
 
     public bool IsDeleted
     {
         get => _isDeleted;
         set
         {
-            _isDeleted = value;
-            RaisePropertyChanged(nameof(IsDeleted));
+            if (IsDeleted is false && value == true)
+            {
+                _isDeleted = value;
+                RaisePropertyChanged(nameof(IsDeleted));
+                RaisePropertyChanged(nameof(MessageVisibility));
+                RaisePropertyChanged(nameof(MessageDeletedWarnVisibility));
+                _notifyMessageUpdated?.Invoke(this);
+            }
         }
     }
 
+    public Visibility MessageVisibility => IsDeleted ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility MessageDeletedWarnVisibility => IsDeleted ? Visibility.Visible : Visibility.Collapsed;
+
+    [JsonConstructor]
+    public Message(int id, string senderUsername, string receiverUsername, int contentId, DateTime created, bool isEdited, bool isReceived, bool isRead, bool isDeleted)
+    {
+        Id = id;
+        SenderUsername = senderUsername;
+        ReceiverUsername = receiverUsername;
+        ContentId = contentId;
+        Created = created;
+        _isEdited = isEdited;
+        _isReceived = isReceived;
+        _isRead = isRead;
+        _isDeleted = isDeleted;
+    }
+
+    public Message(Message message, Action<Message> readMessage)
+    {
+        Id = message.Id;
+        SenderUsername = message.SenderUsername;
+        ReceiverUsername = message.ReceiverUsername;
+        ContentId = message.ContentId;
+        Created = message.Created;
+        _isEdited = message.IsEdited;
+        _isReceived = message.IsReceived;
+        _isRead = message.IsRead;
+        _isDeleted = message.IsDeleted;
+        _notifyMessageUpdated = readMessage;
+    }
 }

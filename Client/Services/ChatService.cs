@@ -1,9 +1,10 @@
-﻿using Client.Models;
+﻿using Client.Controls;
+using Client.Models;
 using Client.Tools;
+using Client.ViewModels;
 using Microsoft.AspNetCore.SignalR.Client;
 using Prism.Mvvm;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,23 +14,18 @@ namespace Client.Services
 {
     public class ChatService : BindableBase, IDisposable
     {
-        public event Action<Message>? MessageReceived;
+        public event Action<MessageViewModel>? MessageReceived;
+        public event Action<Message>? MessageUpdated;
+        public event Action<string>? ErrorMessageReceived;
 
         private bool _disposed;
         private HubConnection _connection = null!;
         private string? _token;
-        private ObservableCollection<Chat> _chats = null!;
         private ObservableCollection<User> _users = null!;
-
-        public ObservableCollection<Chat> Chats
-        {
-            get => _chats;
-            private set
-            {
-                _chats = value;
-                RaisePropertyChanged(nameof(Chats));
-            }
-        }
+        private ObservableCollection<Message> _messages = null!;
+        private ObservableCollection<MessageContent> _messagesContents = null!;
+        private ObservableCollection<MessageViewModel> _messagesViewModels = null!;
+        private ObservableCollection<MessageControl> _messagesControls = null!;
 
         public ObservableCollection<User> Users
         {
@@ -41,93 +37,81 @@ namespace Client.Services
             }
         }
 
+        public ObservableCollection<Message> Messages
+        {
+            get => _messages;
+            private set
+            {
+                _messages = value;
+                RaisePropertyChanged(nameof(Messages));
+            }
+        }
+
+        public ObservableCollection<MessageContent> MessagesContents
+        {
+            get => _messagesContents;
+            private set
+            {
+                _messagesContents = value;
+                RaisePropertyChanged(nameof(MessagesContents));
+            }
+        }
+
+        public ObservableCollection<MessageViewModel> MessagesViewModels
+        {
+            get => _messagesViewModels;
+            private set
+            {
+                _messagesViewModels = value;
+                RaisePropertyChanged(nameof(MessagesViewModels));
+            }
+        }
+
+        public ObservableCollection<MessageControl> MessagesControls
+        {
+            get => _messagesControls;
+            private set
+            {
+                _messagesControls = value;
+                RaisePropertyChanged(nameof(MessagesControls));
+            }
+        }
+
         public ChatService(string token)
         {
             _token = token;
             SetUpService();
-            Chats = new ObservableCollection<Chat>();
-            Users = new ObservableCollection<User>();
+            Users ??= new();
+            Messages ??= new();
+            MessagesContents ??= new();
+            MessagesViewModels ??= new();
+            MessagesControls ??= new();
         }
 
-        public void Dispose()
+        public async void Dispose()
         {
             if (_disposed)
-            {
                 return;
-            }
 
-            _connection?.StopAsync();
+            await _connection.StopAsync();
             _connection?.DisposeAsync();
             _disposed = true;
             GC.SuppressFinalize(this);
         }
 
-        public async Task SendMessage(string message, User receiver)
+        public async ValueTask SendMessage(MessageContent messageContent, string receiverUsername)
         {
-            try
-            {
-                await _connection.InvokeAsync("SendMessage", message, receiver, null);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"{ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            await TryExecuteAsync(async () => await _connection.InvokeAsync("SendMessage", messageContent, receiverUsername));
         }
 
-        public async Task SendMessage(string message, Chat destinationChat)
+        public async ValueTask UpdateMessage(Message message, MessageContent messageContent)
         {
-            if (destinationChat.Messages is not null)
-            {
-                foreach (Message msg in destinationChat.Messages)
-                {
-                    msg.Chat = null;
-                }
-            }
-
-            try
-            {
-                await _connection.InvokeAsync("SendMessage", message, null, destinationChat);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"{ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            await TryExecuteAsync(async () => await _connection.InvokeAsync("UpdateMessage", message, messageContent));
         }
 
-        public async Task UpdateMessage(Message message)
+        public async ValueTask UpdateCurrentUserData(User updatedUser)
         {
-            try
-            {
-                await _connection.InvokeAsync("UpdateMessage", message);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"{ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        public async Task UpdateChat(Chat chat)
-        {
-            try
-            {
-                await _connection.InvokeAsync("UpdateChat", chat);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"{ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        public async Task UpdateCurrentUserData()
-        {
-            try
-            {
-                await _connection.InvokeAsync("UpdateCurrentUser", App.Instance.CurrentUser);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"{ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            await TryExecuteAsync(async () => await _connection.InvokeAsync("UpdateCurrentUser", updatedUser));
         }
 
         private async void SetUpService()
@@ -141,14 +125,18 @@ namespace Client.Services
             }).WithAutomaticReconnect().Build();
 
             _connection.On<Data>("SyncData", SyncData);
-            _connection.On<Message>("ReceiveMessageData", ReceiveMessageData);
-            _connection.On<Chat>("ReceiveChatData", ReceiveChatData);
+            _connection.On<Message, MessageContent>("ReceiveMessageData", ReceiveMessageData);
             _connection.On<User>("ReceiveUserData", ReceiveUserData);
+            _connection.On<string>("ReceiveErrorMessage", ReceiveErrorMessage);
+            await TryExecuteAsync(async () => await _connection.StartAsync());
+            await TryExecuteAsync(async () => await _connection.InvokeAsync("SyncData"));
+        }
 
+        private async ValueTask TryExecuteAsync(Func<ValueTask> execute)
+        {
             try
             {
-                await _connection.StartAsync();
-                await _connection.InvokeAsync("SyncData");
+                await execute();
             }
             catch (Exception ex)
             {
@@ -156,86 +144,79 @@ namespace Client.Services
             }
         }
 
-        private void SyncData(Data data)
+        private async void SyncData(Data data)
         {
-            foreach (Chat cht in data.Chats)
-            {
-                if (cht.Messages is not null)
-                {
-                    foreach (Message msg in cht.Messages)
-                    {
-                        msg.Chat = cht;
-                    }
-                }
-            }
-
-            Users = new ObservableCollection<User>(data.Users);
-            Chats = new ObservableCollection<Chat>(data.Chats);
-        }
-
-        private void ReceiveMessageData(Message message)
-        {
-            if (message is null)
+            if (data is null)
                 return;
 
-            Application.Current.Dispatcher.Invoke(() =>
+            Users = new ObservableCollection<User>(data.Users);
+            Messages = new ObservableCollection<Message>();
+            MessagesContents = new ObservableCollection<MessageContent>(data.MessagesContents);
+            MessagesViewModels = new ObservableCollection<MessageViewModel>();
+            MessagesControls = new ObservableCollection<MessageControl>();
+
+            await Application.Current.Dispatcher.InvokeAsync(async () =>
             {
-                Chat? destinationChat = Chats.SingleOrDefault(c => c.Id == message.Chat.Id);
+                for (int i = 0; i < data.Messages.Count; i++)
+                {
+                    Messages.Add(new(data.Messages[i], NotifyMessageUpdated));
+                    var messageContent = MessagesContents.First(mC => mC.Id == Messages[i].ContentId);
+                    MessagesViewModels.Add(new MessageViewModel(Messages[i], messageContent));
+                    MessagesControls.Add(new MessageControl(MessagesViewModels.Last()));
 
-                if (destinationChat is null)
-                    return;
+                    if (Messages[i].IsReceived == false && Messages[i].ReceiverUsername == App.Instance.CurrentUser.Username)
+                        await TryExecuteAsync(async () => await UpdateMessage(Messages[i], messageContent));
+                }
+            });
+        }
 
-                destinationChat.Messages ??= new ObservableCollection<Message>();
-                var foundMsg = destinationChat.Messages.SingleOrDefault(m => m.Id == message.Id);
+        private async void ReceiveMessageData(Message message, MessageContent messageContent)
+        {
+            if (message is null || messageContent is null)
+                return;
+
+            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
+                Message? foundMsg = Messages.SingleOrDefault(m => m.Id == message.Id);
 
                 if (foundMsg is not null)
                 {
+                    MessageContent foundMsgContent = MessagesContents.First(mC => mC.Id == messageContent.Id);
                     foundMsg.IsReceived = message.IsReceived;
                     foundMsg.IsRead = message.IsRead;
                     foundMsg.IsEdited = message.IsEdited;
                     foundMsg.IsDeleted = message.IsDeleted;
-                    foundMsg.Content = message.Content;
+                    foundMsgContent.Text = messageContent.Text;
+                    foundMsgContent.Images = messageContent.Images;
                 }
                 else
                 {
-                    destinationChat.Messages.Add(message);
-                    MessageReceived?.Invoke(message);
+                    Messages.Add(new(message, NotifyMessageUpdated));
+                    var updatedMessage = Messages.Last();
+                    MessagesContents.Add(messageContent);
+                    MessagesViewModels.Add(new MessageViewModel(updatedMessage, messageContent));
+                    MessagesControls.Add(new MessageControl(MessagesViewModels.Last()));
+                    MessageReceived?.Invoke(MessagesViewModels.Last());
+
+                    if (updatedMessage.IsReceived == false && updatedMessage.ReceiverUsername == App.Instance.CurrentUser.Username)
+                        await TryExecuteAsync(async () => await UpdateMessage(updatedMessage, messageContent));
                 }
             });
         }
 
-        private void ReceiveChatData(Chat chat)
+        private async void ReceiveUserData(User user)
         {
-            if (chat is null)
-                return;
+            Users ??= new();
 
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                var foundChat = Chats.SingleOrDefault(c => c.Id == chat.Id);
-
-                if (foundChat is not null)
-                {
-                    foundChat.Name = chat.Name;
-                }
-                else
-                {
-                    Chats.Add(chat);
-                }
-            });
-        }
-
-        private void ReceiveUserData(User user)
-        {
             if (user is null)
                 return;
 
-            Application.Current.Dispatcher.Invoke(() =>
+            await Application.Current.Dispatcher.InvokeAsync(() =>
             {
-                var foundUser = Users.SingleOrDefault(u => u.Id == user.Id);
+                User? foundUser = Users.SingleOrDefault(u => u.Id == user.Id);
 
                 if (foundUser is not null)
                 {
-                    foundUser.Rank = user.Rank;
                     foundUser.Firstname = user.Firstname;
                     foundUser.Lastname = user.Lastname;
                     foundUser.Gender = user.Gender;
@@ -247,7 +228,6 @@ namespace Client.Services
                 }
                 else if (App.Instance.CurrentUser is not null && user.Id == App.Instance.CurrentUser.Id)
                 {
-                    App.Instance.CurrentUser.Rank = user.Rank;
                     App.Instance.CurrentUser.Firstname = user.Firstname;
                     App.Instance.CurrentUser.Lastname = user.Lastname;
                     App.Instance.CurrentUser.Gender = user.Gender;
@@ -262,6 +242,17 @@ namespace Client.Services
                     Users.Add(user);
                 }
             });
+        }
+
+        private void ReceiveErrorMessage(string errorMessage)
+        {
+            ErrorMessageReceived?.Invoke(errorMessage);
+        }
+
+        private async void NotifyMessageUpdated(Message message)
+        {
+            await UpdateMessage(message, MessagesContents.First(mC => mC.Id == message.ContentId));
+            MessageUpdated?.Invoke(message);
         }
     }
 }

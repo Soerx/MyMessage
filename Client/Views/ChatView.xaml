@@ -6,6 +6,7 @@
              xmlns:viewmodels="clr-namespace:Client.ViewModels"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+             xmlns:controls="clr-namespace:Client.Controls"
              d:DataContext="{d:DesignInstance Type=viewmodels:ChatViewModel}"
              mc:Ignorable="d">
     <Grid>
@@ -31,17 +32,13 @@
                                Width="48"
                                Height="48"
                                Stretch="UniformToFill" />
-                        <Image Source="{Binding Chat.Image}"
-                               Width="48"
-                               Height="48"
-                               Stretch="UniformToFill" />
                     </Grid>
                     <materialDesign:Card.Effect>
                         <DropShadowEffect ShadowDepth="0" />
                     </materialDesign:Card.Effect>
                 </materialDesign:Card>
                 <Grid>
-                    <mah:Badged Badge="{Binding Receiver.OnlineVisibility}"
+                    <mah:Badged Badge="{Binding Receiver.DisplayOnline}"
                                 BadgeBackground="LightGreen"
                                 BadgeForeground="LightGreen"
                                 BadgePlacementMode="Right">
@@ -55,37 +52,34 @@
                                              Content="{Binding Receiver}" />
                         </Border>
                     </mah:Badged>
-                    <Border Margin="15">
-                        <mah:MetroHeader Padding="5"
-                                         FontFamily="{StaticResource MaterialDesignFont}"
-                                         FontWeight="Bold"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center"
-                                         FontSize="16"
-                                         Content="{Binding Chat.DisplayName}" />
-                    </Border>
                 </Grid>
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             Margin="15">
                     <Button Content="Профиль"
                             Style="{DynamicResource MaterialDesignFlatDarkButton}"
-                            Command="{Binding GoProfileCommand}"/>
+                            Command="{Binding GoProfileCommand}" />
                 </StackPanel>
             </DockPanel>
         </materialDesign:Card>
 
         <materialDesign:Card Grid.Row="1"
-                             Margin="15">
+                             Margin="15"
+                             Padding="5">
             <ScrollViewer HorizontalScrollBarVisibility="Disabled"
-                          VerticalScrollBarVisibility="Auto">
-                <ItemsControl ItemsSource="{Binding Chat.Messages}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Content.Text}" />
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                          VerticalScrollBarVisibility="Auto"
+                          ScrollChanged="ScrollViewer_ScrollChanged"
+                          x:Name="scroll">
+                <StackPanel x:Name="stackPanel">
+                    <ItemsControl ItemsSource="{Binding Messages}"
+                                  x:Name="control">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type viewmodels:MessageViewModel}">
+                                <controls:MessageControl />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
             </ScrollViewer>
         </materialDesign:Card>
 
@@ -101,12 +95,19 @@
                          Margin="5"
                          Foreground="{StaticResource MaterialDesignLightForeground}"
                          Background="{StaticResource MaterialDesignCardBackground}"
-                         FontFamily="{StaticResource MaterialDesignFont}" />
+                         FontFamily="{StaticResource MaterialDesignFont}"
+                         PreviewKeyDown="TextBox_PreviewKeyDown"
+                         TextWrapping="Wrap"
+                         MinWidth="300"
+                         MaxHeight="150"
+                         MinLines="1"
+                         MaxLines="20" />
             </materialDesign:Card>
             <Button Grid.Column="1"
                     Content="Отправить"
                     Style="{StaticResource MaterialDesignFlatDarkButton}"
-                    Command="{Binding SendMessageCommand}" />
+                    Command="{Binding SendMessageCommand}"
+                    IsDefault="True" />
         </Grid>
     </Grid>
 </UserControl>

@@ -68,7 +68,7 @@
                                     Grid.Row="2"
                                     Content="{Binding RepeatPasswordField}"
                                     IsTabStop="False"
-                                    Focusable="False"/>
+                                    Focusable="False" />
                     <TextBox Grid.Column="1"
                              Grid.Row="2"
                              Text="{Binding RepeatPassword}"
@@ -92,12 +92,21 @@
                                 HorizontalAlignment="Center"
                                 IsTabStop="False"
                                 Focusable="False" />
-                <Button Content="Зарегистрироваться"
-                        Style="{StaticResource MaterialDesignPaperSecondaryDarkButton}"
-                        Command="{Binding RegisterCommand}"
-                        IsDefault="True" />
+                <Grid>
+                    <Button Content="Зарегистрироваться"
+                            Style="{StaticResource MaterialDesignPaperSecondaryDarkButton}"
+                            Command="{Binding RegisterCommand}"
+                            IsEnabled="{Binding IsAvailable}"
+                            IsDefault="True">
+                    </Button>
+                    <mah:ProgressRing Width="25"
+                                      Visibility="{Binding ProgressRingVisibility}"
+                                      Foreground="{DynamicResource PrimaryHueDarkBrush}" />
+                </Grid>
                 <TextBlock Text="{Binding Message}"
                            Visibility="{Binding MessageVisibility}"
+                           HorizontalAlignment="Center"
+                           Margin="10"
                            Foreground="DarkRed" />
                 <TextBlock HorizontalAlignment="Center"
                            Margin="15, 15, 15, -15">

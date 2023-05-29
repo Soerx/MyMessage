@@ -7,6 +7,7 @@
              xmlns:views="clr-namespace:Client.Views"
              xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:materialdDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              d:DataContext="{d:DesignInstance Type=viewmodels:HomeViewModel}"
              mc:Ignorable="d"
              MinHeight="400"
@@ -75,29 +76,14 @@
                                                        Kind="User" />
                         </Controls:HamburgerMenuIconItem.Icon>
                     </Controls:HamburgerMenuIconItem>
-                    <Controls:HamburgerMenuIconItem Label="Пользователи"
+                    <Controls:HamburgerMenuIconItem Label="Контакты"
                                                     Command="{Binding GoUsersCommand}">
                         <Controls:HamburgerMenuIconItem.Icon>
                             <iconPacks:PackIconUnicons Width="22"
                                                        Height="22"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"
-                                                       Kind="UserSquare" />
-                        </Controls:HamburgerMenuIconItem.Icon>
-                    </Controls:HamburgerMenuIconItem>
-                    <Controls:HamburgerMenuIconItem Label="Чаты"
-                                                    Command="{Binding GoChatsCommand}">
-                        <Controls:HamburgerMenuIconItem.Icon>
-                            <Controls:Badged Badge="{Binding ChatsWithUnreadMessagesCount}"
-                                             HorizontalAlignment="Center"
-                                             VerticalAlignment="Center"
-                                             BadgePlacementMode="TopLeft">
-                                <iconPacks:PackIconUnicons Width="22"
-                                                           Height="22"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center"
-                                                           Kind="Chat" />
-                            </Controls:Badged>
+                                                       Kind="UsersAlt" />
                         </Controls:HamburgerMenuIconItem.Icon>
                     </Controls:HamburgerMenuIconItem>
                     <Controls:HamburgerMenuIconItem Label="Настройки"
@@ -141,9 +127,6 @@
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type viewmodels:UsersListViewModel}">
                     <views:UsersListView />
-                </DataTemplate>
-                <DataTemplate DataType="{x:Type viewmodels:ChatsListViewModel}">
-                    <views:ChatsListView />
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type viewmodels:ChatViewModel}">
                     <views:ChatView />

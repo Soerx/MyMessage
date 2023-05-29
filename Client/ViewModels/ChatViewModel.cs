@@ -1,114 +1,91 @@
 ﻿using Client.Commands;
+using Client.Controls;
 using Client.Models;
 using Client.Services;
 using Client.Stores;
 using Prism.Mvvm;
 using System;
-using System.Windows;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows.Input;
 
-namespace Client.ViewModels
+namespace Client.ViewModels;
+
+public class ChatViewModel : BindableBase, IDisposable
 {
-    public class ChatViewModel : BindableBase, IDisposable
+    private readonly NavigationStore _navigationStore;
+    private readonly ChatService _chatService;
+    private string? _sendingMessage;
+    private bool _disposed;
+
+    public User Receiver { get; }
+
+    public string? SendingMessage
     {
-        private bool _subscribed;
-        private bool _disposed;
-        private readonly NavigationStore _navigationStore;
-        private readonly ChatService _chatService;
-        private string? _sendedMessageText;
-        private string? _sendingMessage;
-        
-        public Chat? Chat { get; }
-        public User? Receiver { get; }
-
-        public string? SendingMessage
+        get => _sendingMessage;
+        set
         {
-            get => _sendingMessage;
-            set
-            {
-                _sendingMessage = value;
-                RaisePropertyChanged(nameof(SendingMessage));
-            }
+            _sendingMessage = value;
+            RaisePropertyChanged(nameof(SendingMessage));
+        }
+    }
+
+    public ObservableCollection<MessageControl> Messages => new(_chatService.MessagesControls
+            .Where(mC => mC.MessageViewModel.Message.SenderUsername == Receiver.Username
+            || mC.MessageViewModel.Message.ReceiverUsername == Receiver.Username));
+
+    public ICommand SendMessageCommand { get; }
+    public ICommand? GoProfileCommand { get; }
+
+    public ChatViewModel(NavigationStore navigationStore, ChatService chatService, User receiver)
+    {
+        _navigationStore = navigationStore;
+        _chatService = chatService;
+        Receiver = receiver;
+        SendMessageCommand = new RelayCommand(SendMessage);
+        GoProfileCommand = new RelayCommand(GoToUser);
+        _chatService.MessageReceived += UpdateReceivedMessages;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+        _chatService.MessageReceived -= UpdateReceivedMessages;
+        GC.SuppressFinalize(this);
+    }
+
+    private void GoToUser(object parameter)
+    {
+        _navigationStore.CurrentViewModel = new ProfileViewModel(Receiver);
+    }
+
+    private async void SendMessage(object parameter)
+    {
+        bool textExist = false;
+        bool imageExist = false;
+
+        if (string.IsNullOrWhiteSpace(SendingMessage) == false)
+        {
+            textExist = true;
         }
 
-        public Visibility ProfileButtonVisibility
+        if (textExist || imageExist)
         {
-            get
-            {
-                if (Receiver is null)
-                    return Visibility.Collapsed;
-
-                return Visibility.Visible;
-            }
+            await _chatService.SendMessage(new MessageContent() { Text = SendingMessage}, Receiver.Username);
+            SendingMessage = string.Empty;
         }
+    }
 
-        public ICommand SendMessageCommand { get; }
-        public ICommand? GoProfileCommand { get; }
+    private void UpdateReceivedMessages(MessageViewModel message)
+    {
+        RaisePropertyChanged(nameof(Messages));
+    }
 
-        private ChatViewModel(NavigationStore navigationStore, ChatService chatService)
-        {
-            _navigationStore = navigationStore;
-            _chatService = chatService;
-            SendMessageCommand = new RelayCommand(SendMessage);
-        }
-
-        public ChatViewModel(NavigationStore navigationStore, ChatService chatService, Chat currentChat) : this(navigationStore, chatService)
-        {
-            Chat = currentChat;
-        }
-
-        public ChatViewModel(NavigationStore navigationStore, ChatService chatService, User receiver) : this(navigationStore, chatService)
-        {
-            Receiver = receiver;
-            GoProfileCommand = new RelayCommand((object parameter) => _navigationStore.CurrentViewModel = new ProfileViewModel(receiver));
-        }
-
-        public void Dispose()
-        {
-            if (_disposed) 
-                return;
-
-            _disposed = true;
-
-            if (_subscribed)
-                _chatService.MessageReceived -= SwitchToChat;
-
-            GC.SuppressFinalize(this);
-        }
-
-        private async void SendMessage(object parameter)
-        {
-            if (string.IsNullOrWhiteSpace(SendingMessage) == false)
-            {
-                if (Chat is not null)
-                {
-                    await _chatService.SendMessage(SendingMessage, Chat);
-                }
-                else if (Receiver is not null)
-                {
-                    _chatService.MessageReceived += SwitchToChat;
-                    _sendedMessageText = SendingMessage;
-                    _subscribed = true;
-                    await _chatService.SendMessage(SendingMessage, Receiver);
-                }
-            }
-        }
-
-        private void SwitchToChat(Message message)
-        {
-            if (App.Instance.CurrentUser is null || _sendedMessageText is null)
-                return;
-
-            if (message.Sender.Id == App.Instance.CurrentUser.Id && message.Content.Text == _sendedMessageText)
-            {
-                _navigationStore.CurrentViewModel = new ChatViewModel(_navigationStore, _chatService, message.Chat);
-                Dispose();
-            }
-        }
-
-        ~ChatViewModel()
-        {
-            Dispose();
-        }
+    ~ChatViewModel()
+    {
+        Dispose();
     }
 }

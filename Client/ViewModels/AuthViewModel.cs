@@ -5,6 +5,7 @@ using Client.Stores;
 using MahApps.Metro.Controls;
 using Prism.Mvvm;
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -22,6 +23,20 @@ public class AuthViewModel : BindableBase, IDisposable
     private Visibility _passwordVisibility;
     private Visibility _messageVisibility;
     private string? _message;
+    private bool _isAvailable;
+
+    public bool IsAvailable
+    {
+        get => _isAvailable;
+        set
+        {
+            _isAvailable = value;
+            RaisePropertyChanged(nameof(IsAvailable));
+            RaisePropertyChanged(nameof(ProgressRingVisibility));
+        }
+    }
+
+    public Visibility ProgressRingVisibility => IsAvailable ? Visibility.Collapsed : Visibility.Visible;
 
     public string Username
     {
@@ -106,10 +121,11 @@ public class AuthViewModel : BindableBase, IDisposable
         PasswordVisibilitySwitcher.OffContent = "Показать пароль";
         PasswordVisibilitySwitcher.OnContent = "Скрыть пароль";
         PasswordVisibilitySwitcher.Toggled += SwitchPasswordVisibility;
-        AuthCommand = new RelayCommand(Auth);
+        AuthCommand = new AsyncRelayCommand(Auth);
         GoRegisterCommand = new RelayCommand(GoRegister);
         PasswordVisibility = Visibility.Collapsed;
         MessageVisibility = Visibility.Collapsed;
+        IsAvailable = true;
     }
 
     public void Dispose()
@@ -139,8 +155,9 @@ public class AuthViewModel : BindableBase, IDisposable
         _disposed = true;
     }
 
-    private void Auth(object parameter)
+    private async Task Auth(object parameter)
     {
+        IsAvailable = false;
         Message = string.Empty;
         MessageVisibility = Visibility.Collapsed;
 
@@ -151,24 +168,22 @@ public class AuthViewModel : BindableBase, IDisposable
             return;
 
         using AuthService db = new();
-        
-        if (db.Auth(new AuthArgs(Username, Password), out string? token, out string? exception) && token is not null)
+        var result = await db.Auth(new AuthArgs(Username, Password));
+        bool isRegisterSuccess = result.Item1;
+
+        if (isRegisterSuccess)
         {
+            string token = result.Item2!;
             _navigationStore.CurrentViewModel = new HomeViewModel(_navigationStore, token);
         }
         else
         {
-            if (string.IsNullOrWhiteSpace(exception) == false)
-            {
-                Message += $"• {exception}";
-            }
-            else
-            {
-                Message += "• Неверный логин или пароль";
-            }
-
+            string errorMessage = result.Item3!;
+            Message += $"• {errorMessage}";
             MessageVisibility = Visibility.Visible;
         }
+
+        IsAvailable = true;
     }
 
     private void GoRegister(object parameter)

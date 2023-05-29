@@ -5,7 +5,6 @@ using Client.Stores;
 using Prism.Mvvm;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Windows;
 using System.Windows.Input;
 
 namespace Client.ViewModels
@@ -65,17 +64,7 @@ namespace Client.ViewModels
         {
             if (parameter is User user)
             {
-                int dialogUsersCount = 2;
-                Chat? destinationDialog = _chat.Chats.SingleOrDefault(c => c.Users.Any(u => u.Id == user.Id) && c.Users.Count == dialogUsersCount);
-
-                if (destinationDialog is not null)
-                {
-                    _navigationStore.CurrentViewModel = new ChatViewModel(_navigationStore, _chat, destinationDialog);
-                }
-                else
-                {
-                    _navigationStore.CurrentViewModel = new ChatViewModel(_navigationStore, _chat, user);
-                }
+                _navigationStore.CurrentViewModel = new ChatViewModel(_navigationStore, _chat, user);
             }
         }
     }

@@ -11,6 +11,7 @@ using Client.Args;
 using Client.Models;
 using Client.Tools;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Client.ViewModels;
 
@@ -32,6 +33,20 @@ public class RegisterViewModel : BindableBase, IDisposable
     private Visibility _passwordVisibility;
     private Visibility _messageVisibility;
     private string? _message;
+    private bool _isAvailable;
+
+    public bool IsAvailable
+    {
+        get => _isAvailable;
+        set
+        {
+            _isAvailable = value;
+            RaisePropertyChanged(nameof(IsAvailable));
+            RaisePropertyChanged(nameof(ProgressRingVisibility));
+        }
+    }
+
+    public Visibility ProgressRingVisibility => IsAvailable ? Visibility.Collapsed : Visibility.Visible;
 
     public string Username
     {
@@ -190,7 +205,7 @@ public class RegisterViewModel : BindableBase, IDisposable
         PasswordVisibilitySwitcher.OffContent = "Показать пароль";
         PasswordVisibilitySwitcher.OnContent = "Скрыть пароль";
         PasswordVisibilitySwitcher.Toggled += SwitchPasswordVisibility;
-        RegisterCommand = new RelayCommand(Register);
+        RegisterCommand = new AsyncRelayCommand(Register);
         GoAuthCommand = new RelayCommand(GoAuth);
         PasswordVisibility = Visibility.Collapsed;
         MessageVisibility = Visibility.Collapsed;
@@ -204,6 +219,7 @@ public class RegisterViewModel : BindableBase, IDisposable
         }
 
         SelectedGenderWrapper = new GenderWrapper(Gender.Unspecified);
+        IsAvailable = true;
     }
 
     public void Dispose()
@@ -233,8 +249,9 @@ public class RegisterViewModel : BindableBase, IDisposable
         _disposed = true;
     }
 
-    private void Register(object parameter)
+    private async Task Register(object parameter)
     {
+        IsAvailable = false;
         Message = string.Empty;
         MessageVisibility = Visibility.Collapsed;
 
@@ -242,30 +259,27 @@ public class RegisterViewModel : BindableBase, IDisposable
             return;
 
         using AuthService authService = new();
-
-        if (authService.Register(new RegisterArgs(Username,
+        var result = await authService.Register(new RegisterArgs(Username,
                                                   Password,
                                                   Firstname,
                                                   Lastname,
                                                   SelectedGenderWrapper.Gender,
-                                                  Birthdate), out string? token, out string? exception) && token is not null)
+                                                  Birthdate));
+        bool isRegisterSuccess = result.Item1;
+
+        if (isRegisterSuccess)
         {
+            string token = result.Item2!;
             _navigationStore.CurrentViewModel = new HomeViewModel(_navigationStore, token);
         }
         else
         {
-            if (string.IsNullOrWhiteSpace(exception) == false)
-            {
-                Message += $"• {exception}";
-            }
-            else
-            {
-                Message += "• Ошибка регистрации o_O";
-            }
-
+            string errorMessage = result.Item3!;
+            Message += $"• {errorMessage}";
             MessageVisibility = Visibility.Visible;
         }
 
+        IsAvailable = true;
     }
 
     private bool CheckFieldsValuesCorrect()

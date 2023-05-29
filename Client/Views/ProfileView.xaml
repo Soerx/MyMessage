@@ -34,7 +34,7 @@
                         <DropShadowEffect ShadowDepth="0" />
                     </materialDesign:Card.Effect>
                 </materialDesign:Card>
-                <mah:Badged Badge="{Binding User.OnlineVisibility}"
+                <mah:Badged Badge="{Binding User.DisplayOnline}"
                             BadgeBackground="LightGreen"
                             BadgeForeground="LightGreen">
                     <materialDesign:Card>

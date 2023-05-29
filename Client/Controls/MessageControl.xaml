@@ -1,0 +1,99 @@
+﻿<UserControl x:Class="Client.Controls.MessageControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:viewmodels="clr-namespace:Client.ViewModels"
+             d:DataContext="{d:DesignInstance Type=viewmodels:MessageViewModel}"
+             mc:Ignorable="d">
+    <mah:Badged Badge="{Binding Message.DisplayNotReadMarker}"
+                BadgeBackground="{DynamicResource MahApps.Brushes.AccentBase}"
+                BadgeForeground="{DynamicResource MahApps.Brushes.AccentBase}"
+                BadgeFontSize="1"
+                BadgePlacementMode="Left"
+                HorizontalAlignment="{Binding MessageAlignment}"
+                Padding="15,0,0,0">
+        <materialDesign:Card Background="{DynamicResource MahApps.Brushes.Accent3}"
+                             Margin="2"
+                             Padding="5"
+                             MaxWidth="500">
+            <Grid>
+                <Grid Visibility="{Binding Message.MessageDeletedWarnVisibility}">
+                    <StackPanel>
+                        <TextBlock Text="Сообщение было удалено."
+                                   FontStyle="Italic"
+                                   FontSize="14"
+                                   TextWrapping="WrapWithOverflow"/>
+                        <TextBlock Text="{Binding Message.Created, StringFormat={}{0:yyyy.MM.dd hh:mm}}"
+                                   FontSize="11"
+                                   HorizontalAlignment="Right"
+                                   Foreground="{DynamicResource MaterialDesignDarkBackground}" />
+                    </StackPanel>
+                </Grid>
+                <Grid Visibility="{Binding Message.MessageVisibility}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="{Binding Content.Text}"
+                                       FontSize="14"
+                                       TextWrapping="WrapWithOverflow" />
+                            <ItemsControl ItemsSource="{Binding Content.BitmapImages}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="3" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Image Source="{Binding }"
+                                               MaxHeight="200"
+                                               MaxWidth="150"
+                                               Margin="5" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding Message.Created, StringFormat={}{0:yyyy.MM.dd hh:mm}}"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource MaterialDesignDarkBackground}"
+                                           Margin="2" />
+
+                                <Grid>
+                                    <iconPacks:PackIconUnicons Width="12"
+                                                               Height="12"
+                                                               VerticalAlignment="Center"
+                                                               Kind="Check"
+                                                               Margin="5,0,0,0"
+                                                               Visibility="{Binding Message.ReceivedMarkerVisibility}" />
+                                    <iconPacks:PackIconUnicons Width="12"
+                                                               Height="12"
+                                                               VerticalAlignment="Center"
+                                                               Kind="Check"
+                                                               Margin="0,0,5,0"
+                                                               Visibility="{Binding Message.ReadMarkerVisibility}" />
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+                        <materialDesign:PopupBox Grid.Column="1"
+                                                 x:Name="popup"
+                                                 Visibility="{Binding PopupVisibility}">
+                            <materialDesign:PopupBox.PopupContent>
+                                <StackPanel>
+                                    <Button Content="Удалить"
+                                            Command="{Binding DeleteCommand}"/>
+                                </StackPanel>
+                            </materialDesign:PopupBox.PopupContent>
+                        </materialDesign:PopupBox>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </materialDesign:Card>
+    </mah:Badged>
+</UserControl>
