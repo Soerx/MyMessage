@@ -7,6 +7,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
              xmlns:controls="clr-namespace:Client.Controls"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              d:DataContext="{d:DesignInstance Type=viewmodels:ChatViewModel}"
              mc:Ignorable="d">
     <Grid>
@@ -88,7 +89,39 @@
                 <ColumnDefinition />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <materialDesign:Card>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <Grid Grid.ColumnSpan="2"
+                  Height="20"
+                  Visibility="{Binding EditButtonVisibility}"
+                  Background="{StaticResource MaterialDesignDarkBackground}">
+                <iconPacks:PackIconUnicons Width="10"
+                                           Height="10"
+                                           HorizontalAlignment="Left"
+                                           VerticalAlignment="Center"
+                                           Kind="EditAlt"
+                                           Margin="5"
+                                           Foreground="{StaticResource MaterialDesignDarkForeground}"/>
+                <TextBlock Text="Редактирование"
+                           Foreground="{StaticResource MaterialDesignDarkForeground}"
+                           Margin="20,0,0,0"/>
+                <Button Style="{StaticResource MaterialDesignFlatDarkButton}"
+                        HorizontalAlignment="Right"
+                        Height="20"
+                        Padding="0"
+                        Command="{Binding CancelEditMessageCommand}">
+                    <iconPacks:PackIconUnicons Width="10"
+                                               Height="10"
+                                               HorizontalAlignment="Left"
+                                               VerticalAlignment="Center"
+                                               Kind="X"
+                                               Margin="5"
+                                               Foreground="{StaticResource MaterialDesignDarkForeground}" />
+                </Button>
+            </Grid>
+            <materialDesign:Card Grid.Row="1">
                 <TextBox BorderThickness="0"
                          Text="{Binding SendingMessage, UpdateSourceTrigger=PropertyChanged}"
                          Padding="5"
@@ -104,10 +137,39 @@
                          MaxLines="20" />
             </materialDesign:Card>
             <Button Grid.Column="1"
-                    Content="Отправить"
+                    Grid.Row="1"
                     Style="{StaticResource MaterialDesignFlatDarkButton}"
                     Command="{Binding SendMessageCommand}"
-                    IsDefault="True" />
+                    Visibility="{Binding SendButtonVisibility}"
+                    IsDefault="True"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Height="48">
+                <Button.Content>
+                    <iconPacks:PackIconUnicons Width="32"
+                                               Height="32"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Kind="Message" />
+                </Button.Content>
+            </Button>
+            <Button Grid.Column="1"
+                    Grid.Row="1"
+                    Style="{StaticResource MaterialDesignFlatDarkButton}"
+                    Command="{Binding EditMessageCommand}"
+                    Visibility="{Binding EditButtonVisibility}"
+                    IsDefault="True"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Height="48">
+                <Button.Content>
+                    <iconPacks:PackIconUnicons Width="32"
+                                               Height="32"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Kind="Check" />
+                </Button.Content>
+            </Button>
         </Grid>
     </Grid>
 </UserControl>

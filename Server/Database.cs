@@ -264,7 +264,7 @@ public static class Database
 
             realMessage.Content.Images = imagesEntities;
             realMessage.IsDeleted = realMessage.IsDeleted ? true : updatedMessage.IsDeleted;
-            realMessage.IsEdited = true;
+            realMessage.IsEdited = realMessage.IsEdited ? true : updatedMessage.IsEdited;
         }
         else
         {

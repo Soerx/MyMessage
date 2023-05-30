@@ -17,6 +17,7 @@ namespace Client.Services
         public event Action<MessageViewModel>? MessageReceived;
         public event Action<Message>? MessageUpdated;
         public event Action<string>? ErrorMessageReceived;
+        public event Action<MessageViewModel>? MessageEditButtonClicked;
 
         private bool _disposed;
         private HubConnection _connection = null!;
@@ -161,8 +162,8 @@ namespace Client.Services
                 {
                     Messages.Add(new(data.Messages[i], NotifyMessageUpdated));
                     var messageContent = MessagesContents.First(mC => mC.Id == Messages[i].ContentId);
-                    MessagesViewModels.Add(new MessageViewModel(Messages[i], messageContent));
-                    MessagesControls.Add(new MessageControl(MessagesViewModels.Last()));
+                    MessagesViewModels.Add(new MessageViewModel(Messages[i], messageContent, NotifyMessageEditButtonClicked));
+                    MessagesControls.Add(new MessageControl() { DataContext = MessagesViewModels.Last() });
 
                     if (Messages[i].IsReceived == false && Messages[i].ReceiverUsername == App.Instance.CurrentUser.Username)
                         await TryExecuteAsync(async () => await UpdateMessage(Messages[i], messageContent));
@@ -194,8 +195,8 @@ namespace Client.Services
                     Messages.Add(new(message, NotifyMessageUpdated));
                     var updatedMessage = Messages.Last();
                     MessagesContents.Add(messageContent);
-                    MessagesViewModels.Add(new MessageViewModel(updatedMessage, messageContent));
-                    MessagesControls.Add(new MessageControl(MessagesViewModels.Last()));
+                    MessagesViewModels.Add(new MessageViewModel(updatedMessage, messageContent, NotifyMessageEditButtonClicked));
+                    MessagesControls.Add(new MessageControl() { DataContext = MessagesViewModels.Last() });
                     MessageReceived?.Invoke(MessagesViewModels.Last());
 
                     if (updatedMessage.IsReceived == false && updatedMessage.ReceiverUsername == App.Instance.CurrentUser.Username)
@@ -253,6 +254,11 @@ namespace Client.Services
         {
             await UpdateMessage(message, MessagesContents.First(mC => mC.Id == message.ContentId));
             MessageUpdated?.Invoke(message);
+        }
+
+        private void NotifyMessageEditButtonClicked(MessageViewModel messageViewModel)
+        {
+            MessageEditButtonClicked?.Invoke(messageViewModel);
         }
     }
 }

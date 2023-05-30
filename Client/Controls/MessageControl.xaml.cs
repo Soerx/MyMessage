@@ -8,12 +8,8 @@ namespace Client.Controls;
 /// </summary>
 public partial class MessageControl : UserControl
 {
-    public readonly MessageViewModel MessageViewModel;
-
-    public MessageControl(MessageViewModel messageViewModel)
+    public MessageControl()
     {
-        MessageViewModel = messageViewModel;
-        DataContext = MessageViewModel;
         InitializeComponent();
     }
 }

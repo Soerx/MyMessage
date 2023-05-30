@@ -42,6 +42,7 @@
                         <StackPanel>
                             <TextBlock Text="{Binding Content.Text}"
                                        FontSize="14"
+                                       Margin="5"
                                        TextWrapping="WrapWithOverflow" />
                             <ItemsControl ItemsSource="{Binding Content.BitmapImages}">
                                 <ItemsControl.ItemsPanel>
@@ -60,8 +61,13 @@
                             </ItemsControl>
                             <StackPanel Orientation="Horizontal"
                                         HorizontalAlignment="Right">
+                                <TextBlock Text="изменено"
+                                           VerticalAlignment="Center"
+                                           Visibility="{Binding Message.EditedMarkerVisibility}"
+                                           FontSize="11" />
                                 <TextBlock Text="{Binding Message.Created, StringFormat={}{0:yyyy.MM.dd hh:mm}}"
                                            FontSize="11"
+                                           VerticalAlignment="Bottom"
                                            Foreground="{DynamicResource MaterialDesignDarkBackground}"
                                            Margin="2" />
 
@@ -69,12 +75,14 @@
                                     <iconPacks:PackIconUnicons Width="12"
                                                                Height="12"
                                                                VerticalAlignment="Center"
+                                                               HorizontalAlignment="Right"
                                                                Kind="Check"
                                                                Margin="5,0,0,0"
                                                                Visibility="{Binding Message.ReceivedMarkerVisibility}" />
                                     <iconPacks:PackIconUnicons Width="12"
                                                                Height="12"
                                                                VerticalAlignment="Center"
+                                                               HorizontalAlignment="Right"
                                                                Kind="Check"
                                                                Margin="0,0,5,0"
                                                                Visibility="{Binding Message.ReadMarkerVisibility}" />
@@ -86,8 +94,12 @@
                                                  Visibility="{Binding PopupVisibility}">
                             <materialDesign:PopupBox.PopupContent>
                                 <StackPanel>
+                                    <Button Content="Копировать"
+                                            Command="{Binding CopyTextCommand}" />
+                                    <Button Content="Изменить"
+                                            Command="{Binding EditMessageCommand}" />
                                     <Button Content="Удалить"
-                                            Command="{Binding DeleteCommand}"/>
+                                            Command="{Binding DeleteCommand}" />
                                 </StackPanel>
                             </materialDesign:PopupBox.PopupContent>
                         </materialDesign:PopupBox>

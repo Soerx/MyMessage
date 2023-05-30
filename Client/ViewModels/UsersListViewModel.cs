@@ -41,6 +41,7 @@ namespace Client.ViewModels
             }
         }
 
+
         public ICommand GoToUserCommand { get; }
         public ICommand GoToChatCommand { get; }
 

@@ -24,12 +24,11 @@ public class Message : BindableBase
         get => _isEdited;
         set
         {
-            if (IsEdited is false && value == true)
+            if (IsEdited is false && value != IsEdited)
             {
                 _isEdited = value;
                 RaisePropertyChanged(nameof(IsEdited));
                 RaisePropertyChanged(nameof(EditedMarkerVisibility));
-                _notifyMessageUpdated?.Invoke(this);
             }
         }
     }
@@ -41,7 +40,7 @@ public class Message : BindableBase
         get => _isReceived;
         set
         {
-            if (IsReceived is false && value == true)
+            if (IsReceived is false && value != IsReceived)
             {
                 _isReceived = value;
                 RaisePropertyChanged(nameof(IsReceived));
@@ -57,7 +56,7 @@ public class Message : BindableBase
         get => _isRead;
         set
         {
-            if (IsRead is false && value == true)
+            if (IsRead is false && value != IsRead)
             {
                 _isRead = true;
                 RaisePropertyChanged(nameof(IsRead));
@@ -69,14 +68,14 @@ public class Message : BindableBase
     }
 
     public Visibility ReadMarkerVisibility => IsRead && App.Instance.CurrentUser.Username == SenderUsername ? Visibility.Visible : Visibility.Collapsed;
-    public int? DisplayNotReadMarker => IsRead || App.Instance.CurrentUser.Username == ReceiverUsername ? null : 0;
+    public int? DisplayNotReadMarker => IsRead || App.Instance.CurrentUser.Username == ReceiverUsername || IsDeleted ? null : 0;
 
     public bool IsDeleted
     {
         get => _isDeleted;
         set
         {
-            if (IsDeleted is false && value == true)
+            if (IsDeleted is false && value != IsDeleted)
             {
                 _isDeleted = value;
                 RaisePropertyChanged(nameof(IsDeleted));
