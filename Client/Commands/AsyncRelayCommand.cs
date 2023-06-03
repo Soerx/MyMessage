@@ -6,10 +6,10 @@ namespace Client.Commands;
 
 public class AsyncRelayCommand : DelegateCommandBase
 {
-    private readonly Func<object, Task> _execute;
+    private readonly Func<object, ValueTask> _execute;
     private Func<object, bool>? _canExecute;
 
-    public AsyncRelayCommand(Func<object, Task> execute, Func<object, bool>? canExecute = null)
+    public AsyncRelayCommand(Func<object, ValueTask> execute, Func<object, bool>? canExecute = null)
     {
         _execute = execute;
         _canExecute = canExecute;

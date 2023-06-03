@@ -13,7 +13,7 @@ public class UserEntity
     public string Lastname { get; set; } = null!;
     public Gender Gender { get; set; }
     public DateTime Birthdate { get; set; }
-    public byte[]? Image { get; set; }
+    public ImageEntity? Image { get; set; }
     public string? Status { get; set; }
     public bool IsOnline { get; set; }
     public DateTime LastActivity {  get; set; } = DateTime.Now;

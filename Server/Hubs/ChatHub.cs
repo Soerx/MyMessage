@@ -9,7 +9,7 @@ public class ChatHub : Hub
 {
     public async Task SyncData()
     {
-        if (Database.GetUserMessages(Context.UserIdentifier!, out List<Message>? messages, out List<MessageContent>? messagesContents, out string? errorMessage) is false)
+        if (Database.GetUserMessages(Context.UserIdentifier!, out List<Message>? messages, out string? errorMessage) is false)
         {
             await Clients.Caller.SendAsync("ReceiveErrorMessage", errorMessage);
             return;
@@ -22,7 +22,6 @@ public class ChatHub : Hub
         Data data = new()
         {
             Messages = messages!,
-            MessagesContents = messagesContents!,
             Users = users,
         };
 
@@ -31,31 +30,31 @@ public class ChatHub : Hub
 
     public async Task SendMessage(MessageContent messageContent, string receiverUsername)
     {
-        if (Database.AddMessage(Context.UserIdentifier!, receiverUsername, messageContent, out Message? insertedMessage, out MessageContent? insertedMessageContent, out string? errorMessage) is false)
+        if (Database.AddMessage(Context.UserIdentifier!, receiverUsername, messageContent, out Message? insertedMessage, out string? errorMessage) is false)
         {
             await Clients.Caller.SendAsync("ReceiveErrorMessage", errorMessage);
             return;
         }
 
-        await Clients.User(Context.UserIdentifier!).SendAsync("ReceiveMessageData", insertedMessage, insertedMessageContent);
-        await Clients.User(receiverUsername).SendAsync("ReceiveMessageData", insertedMessage, insertedMessageContent);
+        await Clients.User(Context.UserIdentifier!).SendAsync("ReceiveMessageData", insertedMessage);
+        await Clients.User(receiverUsername).SendAsync("ReceiveMessageData", insertedMessage);
     }
 
-    public async Task UpdateMessage(Message updatedMessage, MessageContent updatedMessageContent)
+    public async Task UpdateMessage(Message updatedMessage)
     {
-        if (Database.UpdateMessage(Context.UserIdentifier!, ref updatedMessage, ref updatedMessageContent, out string? errorMessage) is false)
+        if (Database.UpdateMessage(Context.UserIdentifier!, ref updatedMessage, out string? errorMessage) is false)
         {
             await Clients.Caller.SendAsync("ReceiveErrorMessage", errorMessage);
             return;
         }
 
-        await Clients.User(updatedMessage.SenderUsername).SendAsync("ReceiveMessageData", updatedMessage, updatedMessageContent);
-        await Clients.User(updatedMessage.ReceiverUsername).SendAsync("ReceiveMessageData", updatedMessage, updatedMessageContent);
+        await Clients.User(updatedMessage.SenderUsername).SendAsync("ReceiveMessageData", updatedMessage);
+        await Clients.User(updatedMessage.ReceiverUsername).SendAsync("ReceiveMessageData", updatedMessage);
     }
 
     public async Task UpdateCurrentUser(User updatedUser)
     {
-        if (Database.UpdateUser(Context.UserIdentifier!, updatedUser, out string? errorMessage) is false)
+        if (Database.UpdateUser(Context.UserIdentifier!, ref updatedUser, out string? errorMessage) is false)
         {
             await Clients.Caller.SendAsync("ReceiveErrorMessage", errorMessage);
             return;
@@ -63,6 +62,17 @@ public class ChatHub : Hub
 
         updatedUser.IsOnline = true;
         await Clients.All.SendAsync("ReceiveUserData", updatedUser);
+    }
+
+    public async Task UpdateCurrentUserPassword(string currentPassword, string newPassword)
+    {
+        if (Database.UpdateUserPassword(Context.UserIdentifier!, currentPassword, newPassword, out string? errorMessage) is false)
+        {
+            await Clients.Caller.SendAsync("ReceiveErrorMessage", errorMessage);
+            return;
+        }
+
+        await Clients.All.SendAsync("ReceiveConfirmation");
     }
 
     public override Task OnConnectedAsync()

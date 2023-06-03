@@ -1,5 +1,7 @@
 ﻿using Client.Controls;
 using Client.Models;
+using Client.ViewModels;
+using MahApps.Metro.Controls;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
@@ -45,7 +47,6 @@ public partial class ChatView : UserControl
         }
 
         ReadVisibleMessages();
-
     }
 
     private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -71,21 +72,24 @@ public partial class ChatView : UserControl
         }
     }
 
-    private void ReadVisibleMessages()
+    private async void ReadVisibleMessages()
     {
         Rect scrollViewerBounds = new Rect(new Point(0, 0), new Point(scroll.ActualWidth, scroll.ActualHeight));
 
-        foreach (MessageControl element in control.Items)
+        foreach (MessageViewModel messageViewModel in itemsControl.Items)
         {
+            UIElement element = (UIElement)itemsControl.ItemContainerGenerator.ContainerFromItem(messageViewModel);
             GeneralTransform transform = element.TransformToVisual(scroll);
             Rect elementBounds = transform.TransformBounds(new Rect(0, 0, element.RenderSize.Width, element.RenderSize.Height));
 
             if (scrollViewerBounds.IntersectsWith(elementBounds))
             {
-                if (element.MessageViewModel.Message.IsRead is false && element.MessageViewModel.Message.SenderUsername != App.Instance.CurrentUser.Username)
-                    element.MessageViewModel.Message.IsRead = true;
+                if (messageViewModel.Message.IsRead is false && messageViewModel.Message.SenderUsername != App.Instance.CurrentUser.Username)
+                {
+                    messageViewModel.Message.IsRead = true;
+                    await ((ChatViewModel)DataContext).ChatService.UpdateMessage(messageViewModel.Message);
+                }
             }
         }
     }
-
 }

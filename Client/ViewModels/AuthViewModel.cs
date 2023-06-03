@@ -155,7 +155,7 @@ public class AuthViewModel : BindableBase, IDisposable
         _disposed = true;
     }
 
-    private async Task Auth(object parameter)
+    private async ValueTask Auth(object parameter)
     {
         IsAvailable = false;
         Message = string.Empty;

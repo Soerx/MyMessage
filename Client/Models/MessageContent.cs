@@ -1,21 +1,18 @@
-﻿using Client.Tools;
-using Prism.Mvvm;
-using System;
-using System.Collections.Generic;
-using System.Windows.Media.Imaging;
+﻿using Prism.Mvvm;
+using System.Collections.ObjectModel;
 
 namespace Client.Models;
 
 public class MessageContent : BindableBase
 {
     private string? _text;
-    private List<byte[]>? _images;
+    private ObservableCollection<ImageModel>? _images;
 
     public int Id { get; set; }
 
     public string? Text
     {
-        get => _text;
+        get => _text ??= string.Empty;
         set
         {
             _text = value;
@@ -23,32 +20,13 @@ public class MessageContent : BindableBase
         }
     }
 
-    public List<byte[]>? Images
+    public ObservableCollection<ImageModel>? Images
     {
         get => _images;
         set
         {
             _images = value;
             RaisePropertyChanged(nameof(Images));
-            RaisePropertyChanged(nameof(BitmapImages));
-        }
-    }
-
-    public List<BitmapSource>? BitmapImages
-    {
-        get
-        {
-            if (Images is not null)
-            {
-                List<BitmapSource> images = new();
-
-                foreach (var imageData in Images)
-                    images.Add(ImagesConverter.ByteArrayToImage(imageData)!);
-
-                return images;
-            }
-
-            return null;
         }
     }
 }

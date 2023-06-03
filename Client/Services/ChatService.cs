@@ -1,5 +1,4 @@
-﻿using Client.Controls;
-using Client.Models;
+﻿using Client.Models;
 using Client.Tools;
 using Client.ViewModels;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -15,22 +14,18 @@ namespace Client.Services
     public class ChatService : BindableBase, IDisposable
     {
         public event Action<MessageViewModel>? MessageReceived;
-        public event Action<Message>? MessageUpdated;
         public event Action<string>? ErrorMessageReceived;
+        public event Action? ConfirmationReceived;
         public event Action<MessageViewModel>? MessageEditButtonClicked;
 
         private bool _disposed;
-        private HubConnection _connection = null!;
         private string? _token;
+        private HubConnection _connection = null!;
         private ObservableCollection<User> _users = null!;
-        private ObservableCollection<Message> _messages = null!;
-        private ObservableCollection<MessageContent> _messagesContents = null!;
-        private ObservableCollection<MessageViewModel> _messagesViewModels = null!;
-        private ObservableCollection<MessageControl> _messagesControls = null!;
 
         public ObservableCollection<User> Users
         {
-            get => _users;
+            get => _users ??= new();
             private set
             {
                 _users = value;
@@ -38,55 +33,10 @@ namespace Client.Services
             }
         }
 
-        public ObservableCollection<Message> Messages
-        {
-            get => _messages;
-            private set
-            {
-                _messages = value;
-                RaisePropertyChanged(nameof(Messages));
-            }
-        }
-
-        public ObservableCollection<MessageContent> MessagesContents
-        {
-            get => _messagesContents;
-            private set
-            {
-                _messagesContents = value;
-                RaisePropertyChanged(nameof(MessagesContents));
-            }
-        }
-
-        public ObservableCollection<MessageViewModel> MessagesViewModels
-        {
-            get => _messagesViewModels;
-            private set
-            {
-                _messagesViewModels = value;
-                RaisePropertyChanged(nameof(MessagesViewModels));
-            }
-        }
-
-        public ObservableCollection<MessageControl> MessagesControls
-        {
-            get => _messagesControls;
-            private set
-            {
-                _messagesControls = value;
-                RaisePropertyChanged(nameof(MessagesControls));
-            }
-        }
-
         public ChatService(string token)
         {
             _token = token;
             SetUpService();
-            Users ??= new();
-            Messages ??= new();
-            MessagesContents ??= new();
-            MessagesViewModels ??= new();
-            MessagesControls ??= new();
         }
 
         public async void Dispose()
@@ -105,14 +55,19 @@ namespace Client.Services
             await TryExecuteAsync(async () => await _connection.InvokeAsync("SendMessage", messageContent, receiverUsername));
         }
 
-        public async ValueTask UpdateMessage(Message message, MessageContent messageContent)
+        public async ValueTask UpdateMessage(Message message)
         {
-            await TryExecuteAsync(async () => await _connection.InvokeAsync("UpdateMessage", message, messageContent));
+            await TryExecuteAsync(async () => await _connection.InvokeAsync("UpdateMessage", message));
         }
 
         public async ValueTask UpdateCurrentUserData(User updatedUser)
         {
             await TryExecuteAsync(async () => await _connection.InvokeAsync("UpdateCurrentUser", updatedUser));
+        }
+
+        public async ValueTask UpdateCurrentUserPassword(string currentPassword, string newPassword)
+        {
+            await TryExecuteAsync(async () => await _connection.InvokeAsync("UpdateCurrentUserPassword", currentPassword, newPassword));
         }
 
         private async void SetUpService()
@@ -126,9 +81,10 @@ namespace Client.Services
             }).WithAutomaticReconnect().Build();
 
             _connection.On<Data>("SyncData", SyncData);
-            _connection.On<Message, MessageContent>("ReceiveMessageData", ReceiveMessageData);
+            _connection.On<Message>("ReceiveMessageData", ReceiveMessageData);
             _connection.On<User>("ReceiveUserData", ReceiveUserData);
             _connection.On<string>("ReceiveErrorMessage", ReceiveErrorMessage);
+            _connection.On("ReceiveConfirmation", ReceiveConfirmation);
             await TryExecuteAsync(async () => await _connection.StartAsync());
             await TryExecuteAsync(async () => await _connection.InvokeAsync("SyncData"));
         }
@@ -150,59 +106,62 @@ namespace Client.Services
             if (data is null)
                 return;
 
-            Users = new ObservableCollection<User>(data.Users);
-            Messages = new ObservableCollection<Message>();
-            MessagesContents = new ObservableCollection<MessageContent>(data.MessagesContents);
-            MessagesViewModels = new ObservableCollection<MessageViewModel>();
-            MessagesControls = new ObservableCollection<MessageControl>();
+            Users = data.Users;
 
             await Application.Current.Dispatcher.InvokeAsync(async () =>
             {
-                for (int i = 0; i < data.Messages.Count; i++)
+                foreach (Message message in data.Messages)
                 {
-                    Messages.Add(new(data.Messages[i], NotifyMessageUpdated));
-                    var messageContent = MessagesContents.First(mC => mC.Id == Messages[i].ContentId);
-                    MessagesViewModels.Add(new MessageViewModel(Messages[i], messageContent, NotifyMessageEditButtonClicked));
-                    MessagesControls.Add(new MessageControl() { DataContext = MessagesViewModels.Last() });
+                    User interlocuter;
 
-                    if (Messages[i].IsReceived == false && Messages[i].ReceiverUsername == App.Instance.CurrentUser.Username)
-                        await TryExecuteAsync(async () => await UpdateMessage(Messages[i], messageContent));
+                    if (message.ReceiverUsername == App.Instance.CurrentUser.Username)
+                        interlocuter = Users.Single(u => u.Username == message.SenderUsername);
+                    else
+                        interlocuter = Users.Single(u => u.Username == message.ReceiverUsername);
+
+                    interlocuter.Messages.Add(new(message, NotifyMessageEditButtonClicked));
+
+                    if (message.IsReceived is false && message.ReceiverUsername == App.Instance.CurrentUser.Username)
+                        await TryExecuteAsync(async () => await UpdateMessage(message));
                 }
             });
         }
 
-        private async void ReceiveMessageData(Message message, MessageContent messageContent)
+        private async void ReceiveMessageData(Message message)
         {
-            if (message is null || messageContent is null)
+            if (message is null)
                 return;
 
-            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            User interlocuter;
+
+            if (message.ReceiverUsername == App.Instance.CurrentUser.Username)
+                interlocuter = Users.Single(u => u.Username == message.SenderUsername);
+            else
+                interlocuter = Users.Single(u => u.Username == message.ReceiverUsername);
+
+            MessageViewModel? foundMessageViewModel = interlocuter.Messages.SingleOrDefault(mVM => mVM.Message.Id == message.Id);
+
+            if (foundMessageViewModel is not null)
             {
-                Message? foundMsg = Messages.SingleOrDefault(m => m.Id == message.Id);
-
-                if (foundMsg is not null)
+                foundMessageViewModel.Message.IsReceived = message.IsReceived;
+                foundMessageViewModel.Message.IsRead = message.IsRead;
+                foundMessageViewModel.Message.IsEdited = message.IsEdited;
+                foundMessageViewModel.Message.IsDeleted = message.IsDeleted;
+                foundMessageViewModel.Message.Content.Text = message.Content.Text;
+                foundMessageViewModel.Message.Content.Images = message.Content.Images;
+            }
+            else
+            {
+                await Application.Current.Dispatcher.InvokeAsync(async () =>
                 {
-                    MessageContent foundMsgContent = MessagesContents.First(mC => mC.Id == messageContent.Id);
-                    foundMsg.IsReceived = message.IsReceived;
-                    foundMsg.IsRead = message.IsRead;
-                    foundMsg.IsEdited = message.IsEdited;
-                    foundMsg.IsDeleted = message.IsDeleted;
-                    foundMsgContent.Text = messageContent.Text;
-                    foundMsgContent.Images = messageContent.Images;
-                }
-                else
-                {
-                    Messages.Add(new(message, NotifyMessageUpdated));
-                    var updatedMessage = Messages.Last();
-                    MessagesContents.Add(messageContent);
-                    MessagesViewModels.Add(new MessageViewModel(updatedMessage, messageContent, NotifyMessageEditButtonClicked));
-                    MessagesControls.Add(new MessageControl() { DataContext = MessagesViewModels.Last() });
-                    MessageReceived?.Invoke(MessagesViewModels.Last());
+                    MessageViewModel newMessageViewModel = new(message, NotifyMessageEditButtonClicked);
+                    interlocuter.Messages.Add(newMessageViewModel);
+                    MessageReceived?.Invoke(newMessageViewModel);
 
-                    if (updatedMessage.IsReceived == false && updatedMessage.ReceiverUsername == App.Instance.CurrentUser.Username)
-                        await TryExecuteAsync(async () => await UpdateMessage(updatedMessage, messageContent));
-                }
-            });
+                    if (message.IsReceived == false && message.ReceiverUsername == App.Instance.CurrentUser.Username)
+                        await TryExecuteAsync(async () => await UpdateMessage(message));
+                });
+            }
         }
 
         private async void ReceiveUserData(User user)
@@ -214,7 +173,7 @@ namespace Client.Services
 
             await Application.Current.Dispatcher.InvokeAsync(() =>
             {
-                User? foundUser = Users.SingleOrDefault(u => u.Id == user.Id);
+                User? foundUser = Users.SingleOrDefault(u => u.Username == user.Username);
 
                 if (foundUser is not null)
                 {
@@ -250,10 +209,9 @@ namespace Client.Services
             ErrorMessageReceived?.Invoke(errorMessage);
         }
 
-        private async void NotifyMessageUpdated(Message message)
+        private void ReceiveConfirmation()
         {
-            await UpdateMessage(message, MessagesContents.First(mC => mC.Id == message.ContentId));
-            MessageUpdated?.Invoke(message);
+            ConfirmationReceived?.Invoke();
         }
 
         private void NotifyMessageEditButtonClicked(MessageViewModel messageViewModel)

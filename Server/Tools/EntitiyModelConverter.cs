@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Server.Entities;
 using Server.Models;
 
@@ -15,7 +16,7 @@ public static class EntitiyModelConverter
             Lastname = userEntity.Lastname,
             Gender = userEntity.Gender,
             Birthdate = userEntity.Birthdate,
-            Image = userEntity.Image,
+            Image = userEntity.Image?.ConvertToModel(),
             Status = userEntity.Status,
             IsOnline = userEntity.IsOnline,
             LastActivity = userEntity.LastActivity
@@ -24,12 +25,12 @@ public static class EntitiyModelConverter
 
     public static Message ConvertToModel(this MessageEntity messageEntity)
     {
-        return new Message()
+        return new()
         {
             Id = messageEntity.Id,
             SenderUsername = messageEntity.Sender.Username,
             ReceiverUsername = messageEntity.Receiver.Username,
-            ContentId = messageEntity.Content.Id,
+            Content = messageEntity.Content.ConvertToModel(),
             Created = messageEntity.Created,
             IsEdited = messageEntity.IsEdited,
             IsReceived = messageEntity.IsReceived,
@@ -40,23 +41,57 @@ public static class EntitiyModelConverter
 
     public static MessageContent ConvertToModel(this MessageContentEntity messageContentEntity)
     {
-        List<byte[]>? imagesDataArrays = null;
+        List<ImageModel>? images = null;
 
         if (messageContentEntity.Images is not null)
         {
-            imagesDataArrays = new List<byte[]>();
+            images = new();
 
-            foreach (var image in messageContentEntity.Images)
+            foreach (var imageEntity in messageContentEntity.Images)
             {
-                imagesDataArrays.Add(image.Data);
+                images.Add(imageEntity.ConvertToModel());
             }
         }
 
-        return new MessageContent()
+        return new()
         {
             Id = messageContentEntity.Id,
             Text = messageContentEntity.Text,
-            Images = imagesDataArrays
+            Images = images
         };
+    }
+
+    public static ImageModel ConvertToModel(this ImageEntity imageEntity)
+    {
+        return new()
+        {
+            Id = imageEntity.Id,
+            Name = imageEntity.Name,
+            Path = imageEntity.Path,
+        };
+    }
+
+    public static UserEntity? TryGetEntity(this User user)
+    {
+        using ApplicationContext appContext = new();
+        return appContext.Users.Include(u => u.Image).SingleOrDefault(u => u.Id == user.Id);
+    }
+
+    public static MessageEntity? TryGetEntity(this Message message)
+    {
+        using ApplicationContext appContext = new();
+        return appContext.Messages.Include(m => m.Sender.Image).Include(m => m.Receiver.Image).Include(m => m.Content.Images).SingleOrDefault(m => m.Id == message.Id);
+    }
+
+    public static MessageContentEntity? TryGetEntity(this MessageContent messageContent)
+    {
+        using ApplicationContext appContext = new();
+        return appContext.MessagesContents.Include(mC => mC.Images).SingleOrDefault(mC => mC.Id == messageContent.Id);
+    }
+
+    public static ImageEntity? TryGetEntity(this ImageModel image)
+    {
+        using ApplicationContext appContext = new();
+        return appContext.Images.SingleOrDefault(i => i.Id == image.Id);
     }
 }

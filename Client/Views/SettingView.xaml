@@ -4,9 +4,280 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:viewmodels="clr-namespace:Client.ViewModels"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
              d:DataContext="{d:DesignInstance Type=viewmodels:SettingViewModel}"
              mc:Ignorable="d">
     <Grid>
-            
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+
+            <materialDesign:Card>
+                <StackPanel Margin="15">
+                    <Button Style="{StaticResource MaterialDesignFlatDarkButton}"
+                            Margin="5"
+                            Padding="5"
+                            HorizontalAlignment="Left"
+                            Visibility="{Binding GoBackButtonVisibility}"
+                            Command="{Binding GoBackCommand}">
+                        <iconPacks:PackIconUnicons Width="32"
+                                                   Height="32"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   Kind="ArrowLeft"
+                                                   Margin="5,0,0,0" />
+                    </Button>
+                    <materialDesign:Card UniformCornerRadius="50"
+                                         Height="100"
+                                         Width="100"
+                                         Margin="15">
+                        <Grid>
+                            <Image Source="../Assets/user.png"
+                                   Width="100"
+                                   Height="100"
+                                   Stretch="UniformToFill"
+                                   Visibility="{Binding User.DefaultImageVisibility}" />
+                            <Image Source="{Binding User.Image.Uri}"
+                                   Width="100"
+                                   Height="100"
+                                   Stretch="UniformToFill" />
+                        </Grid>
+                        <materialDesign:Card.Effect>
+                            <DropShadowEffect ShadowDepth="0" />
+                        </materialDesign:Card.Effect>
+                    </materialDesign:Card>
+                    <mah:Badged Badge="{Binding User.DisplayOnline}"
+                                BadgeBackground="LightGreen"
+                                BadgeForeground="LightGreen">
+                        <materialDesign:Card>
+                            <mah:MetroHeader Content="{Binding User.Fullname}"
+                                             Padding="5"
+                                             FontFamily="{StaticResource MaterialDesignFont}"
+                                             FontWeight="Bold"
+                                             HorizontalAlignment="Center" />
+                        </materialDesign:Card>
+                    </mah:Badged>
+                    <materialDesign:Card Padding="5"
+                                         Margin="5">
+                        <StackPanel>
+                            <TextBlock Text="{Binding User.Status, StringFormat={}Статус: {0}}"
+                                       Visibility="{Binding User.StatusVisibility}"
+                                       FontFamily="{StaticResource MaterialDesignFont}" />
+                            <TextBlock FontFamily="{StaticResource MaterialDesignFont}">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}Дата рождения: {0:dd.MM.yyy} ({1} лет)">
+                                        <Binding Path="User.Birthdate" />
+                                        <Binding Path="User.Age" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                            <TextBlock Text="{Binding User.GenderString, StringFormat={}Пол: {0}}"
+                                       FontFamily="{StaticResource MaterialDesignFont}" />
+                            <TextBlock Text="{Binding User.LastActivity, StringFormat={}Был(-а) последний раз в сети: {0:dd.MM.yyyy HH:mm}}"
+                                       Visibility="{Binding User.LastActivityVisibility}"
+                                       FontFamily="{StaticResource MaterialDesignFont}" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
+        <Grid Grid.Column="1"
+              Margin="15">
+            <materialDesign:Card HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"
+                                 Padding="15"
+                                 UniformCornerRadius="15">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+
+                    <StackPanel>
+                        <TextBlock Text="РЕДАКТИРОВАНИЕ"
+                                   HorizontalAlignment="Center"
+                                   FontFamily="{DynamicResource MahApps.Fonts.Family.Header}"
+                                   FontSize="18" />
+                        <Grid Margin="15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <Label Content="Имя:"
+                                   HorizontalAlignment="Right" />
+                            <Label Grid.Row="1"
+                                   Content="Фамилия:"
+                                   HorizontalAlignment="Right" />
+                            <Label Grid.Row="2"
+                                   Content="Пол:"
+                                   HorizontalAlignment="Right" />
+                            <Label Grid.Row="3"
+                                   Content="Дата рождения:"
+                                   HorizontalAlignment="Right" />
+                            <Label Grid.Row="4"
+                                   Content="Фото профиля:"
+                                   HorizontalAlignment="Right" />
+                            <Label Grid.Row="5"
+                                   Content="Статус:"
+                                   VerticalContentAlignment="Center"
+                                   HorizontalAlignment="Right" />
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding Firstname}"
+                                     IsEnabled="{Binding IsUserUpdateAvailable}" />
+                            <TextBox Grid.Column="1"
+                                     MinWidth="200"
+                                     Grid.Row="1"
+                                     Text="{Binding Lastname}"
+                                     IsEnabled="{Binding IsUserUpdateAvailable}" />
+                            <ComboBox Grid.Column="1"
+                                      Grid.Row="2"
+                                      ItemsSource="{Binding GendersWrappers}"
+                                      SelectedItem="{Binding SelectedGenderWrapper, Mode=TwoWay}"
+                                      IsEnabled="{Binding IsUserUpdateAvailable}" />
+                            <DatePicker Grid.Column="1"
+                                        Grid.Row="3"
+                                        SelectedDate="{Binding Birthdate}"
+                                        Language="ru" />
+                            <Button Grid.Column="1"
+                                    Grid.Row="4"
+                                    Style="{StaticResource MaterialDesignFlatDarkButton}"
+                                    Content="{Binding SelectImageButtonContent}"
+                                    Command="{Binding AttachImageCommand}"
+                                    IsEnabled="{Binding IsUserUpdateAvailable}"
+                                    Padding="0">
+                            </Button>
+                            <TextBox Grid.Column="1"
+                                     Grid.Row="5"
+                                     Text="{Binding Status}"
+                                     IsEnabled="{Binding IsUserUpdateAvailable}" />
+                        </Grid>
+                        <Grid>
+                            <Button Content="Изменить"
+                                    Style="{StaticResource MaterialDesignPaperSecondaryDarkButton}"
+                                    Command="{Binding UpdateCurrentUserCommand}"
+                                    IsEnabled="{Binding IsUserUpdateAvailable}"
+                                    IsDefault="True">
+                            </Button>
+                            <mah:ProgressRing Width="25"
+                                              Visibility="{Binding UserUpdateProgressRingVisibility}"
+                                              Foreground="{DynamicResource PrimaryHueDarkBrush}" />
+                        </Grid>
+                        <TextBlock Text="{Binding Message}"
+                                   Visibility="{Binding UpdateUserMessageVisibility}"
+                                   HorizontalAlignment="Center"
+                                   Margin="10" />
+                        <Grid HorizontalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="СМЕНА ПАРОЛЯ"
+                                       HorizontalAlignment="Center"
+                                       Grid.ColumnSpan="2"
+                                       FontFamily="{DynamicResource MahApps.Fonts.Family.Header}"
+                                       FontSize="18"
+                                       Margin="15"/>
+                            <Label Grid.Row="1"
+                                   Content="Текущий Пароль:"
+                                   HorizontalAlignment="Right" />
+                            <Label Grid.Row="2"
+                                   Content="Новый Пароль:"
+                                   HorizontalAlignment="Right" />
+                            <Label Grid.Row="3"
+                                   Content="Повтор:"
+                                   HorizontalAlignment="Right" />
+                            <ContentControl Grid.Column="1"
+                                            Grid.Row="1"
+                                            MinWidth="200"
+                                            Content="{Binding CurrentPasswordField}"
+                                            IsEnabled="{Binding IsUserPasswordUpdateAvailable}"
+                                            IsTabStop="False"
+                                            Focusable="False" />
+                            <TextBox Grid.Column="3"
+                                     Grid.Row="1"
+                                     Text="{Binding CurrentPassword}"
+                                     Visibility="{Binding PasswordVisibility}"
+                                     IsEnabled="{Binding IsUserPasswordUpdateAvailable}"
+                                     MinWidth="200" />
+                            <ContentControl Grid.Column="1"
+                                            Grid.Row="2"
+                                            Content="{Binding PasswordField}"
+                                            IsEnabled="{Binding IsUserPasswordUpdateAvailable}"
+                                            IsTabStop="False"
+                                            Focusable="False" />
+                            <TextBox Grid.Column="3"
+                                     Grid.Row="2"
+                                     Text="{Binding Password}"
+                                     Visibility="{Binding PasswordVisibility}"
+                                     IsEnabled="{Binding IsUserPasswordUpdateAvailable}"
+                                     MinWidth="200" />
+                            <ContentControl Grid.Column="1"
+                                            Grid.Row="3"
+                                            Content="{Binding RepeatPasswordField}"
+                                            IsEnabled="{Binding IsUserPasswordUpdateAvailable}"
+                                            IsTabStop="False"
+                                            Focusable="False" />
+                            <TextBox Grid.Column="1"
+                                     Grid.Row="3"
+                                     Text="{Binding RepeatPassword}"
+                                     IsEnabled="{Binding IsUserPasswordUpdateAvailable}"
+                                     Visibility="{Binding PasswordVisibility}" />
+                            <ContentControl Content="{Binding PasswordVisibilitySwitcher}"
+                                            IsEnabled="{Binding IsUserPasswordUpdateAvailable}"
+                                            HorizontalAlignment="Center"
+                                            Grid.ColumnSpan="2"
+                                            Grid.Row="4"
+                                            IsTabStop="False"
+                                            Focusable="False" />
+                            <Grid Grid.Row="5"
+                                  Grid.ColumnSpan="2">
+                                <Button Content="Изменить"
+                                        Style="{StaticResource MaterialDesignPaperSecondaryDarkButton}"
+                                        Command="{Binding UpdateCurrentUserPasswordCommand}"
+                                        IsEnabled="{Binding IsUserPasswordUpdateAvailable}"
+                                        IsDefault="True">
+                                </Button>
+                                <mah:ProgressRing Width="25"
+                                                  Visibility="{Binding UserPasswordUpdateProgressRingVisibility}"
+                                                  Foreground="{DynamicResource PrimaryHueDarkBrush}" />
+                            </Grid>
+                            <TextBlock Text="{Binding Message}"
+                                       Visibility="{Binding UpdateCurrentUserPasswordCommand}"
+                                       HorizontalAlignment="Center"
+                                       Margin="10"
+                                       Grid.Row="6"
+                                       Grid.ColumnSpan="2" />
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+                <materialDesign:Card.Effect>
+                    <DropShadowEffect ShadowDepth="0"
+                                      BlurRadius="10" />
+                </materialDesign:Card.Effect>
+
+            </materialDesign:Card>
+        </Grid>
     </Grid>
 </UserControl>

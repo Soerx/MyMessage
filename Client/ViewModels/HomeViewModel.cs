@@ -29,7 +29,7 @@ public class HomeViewModel : BindableBase, IDisposable
         _chat = new ChatService(token);
         _homeNavigationStore = new NavigationStore();
         _homeNavigationStore.ViewModelUpdated += HomeViewModelUpdated;
-        _homeNavigationStore.CurrentViewModel = new ProfileViewModel(CurrentUser);
+        _homeNavigationStore.CurrentViewModel = new ProfileViewModel(CurrentUser!);
         GoProfileCommand = new RelayCommand(GoProfile);
         GoUsersCommand = new RelayCommand(GoUsers);
         GoSettingCommand = new RelayCommand(GoSetting);
@@ -53,7 +53,7 @@ public class HomeViewModel : BindableBase, IDisposable
 
     private void GoProfile(object parameter)
     {
-        _homeNavigationStore.CurrentViewModel = new ProfileViewModel(CurrentUser);
+        _homeNavigationStore.CurrentViewModel = new ProfileViewModel(CurrentUser!);
     }
 
     private void GoUsers(object parameter)
@@ -63,7 +63,7 @@ public class HomeViewModel : BindableBase, IDisposable
 
     private void GoSetting(object parameter)
     {
-        _homeNavigationStore.CurrentViewModel = new SettingViewModel();
+        _homeNavigationStore.CurrentViewModel = new SettingViewModel(_chat);
     }
 
     private void Exit(object parameter)

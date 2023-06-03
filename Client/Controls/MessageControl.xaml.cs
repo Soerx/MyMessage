@@ -8,6 +8,22 @@ namespace Client.Controls;
 /// </summary>
 public partial class MessageControl : UserControl
 {
+    public MessageViewModel? MessageViewModel
+    {
+        get
+        {
+            if (DataContext is MessageViewModel viewModel)
+                 return viewModel;
+
+            return null;
+        }
+        set
+        {
+            if (value is MessageViewModel viewModel)
+                DataContext = viewModel;
+        }
+    }
+
     public MessageControl()
     {
         InitializeComponent();

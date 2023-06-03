@@ -9,7 +9,8 @@
              xmlns:controls="clr-namespace:Client.Controls"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              d:DataContext="{d:DesignInstance Type=viewmodels:ChatViewModel}"
-             mc:Ignorable="d">
+             mc:Ignorable="d"
+             x:Name="viewModel">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -20,6 +21,18 @@
         <materialDesign:Card Margin="5"
                              x:Name="userCard">
             <DockPanel>
+                <Button Style="{StaticResource MaterialDesignFlatDarkButton}"
+                        Margin="5"
+                        Padding="5"
+                        HorizontalAlignment="Left"
+                        Command="{Binding GoBackCommand}">
+                    <iconPacks:PackIconUnicons Width="32"
+                                               Height="32"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Center"
+                                               Kind="ArrowLeft"
+                                               Margin="5,0,0,0" />
+                </Button>
                 <materialDesign:Card UniformCornerRadius="50"
                                      Height="48"
                                      Width="48"
@@ -28,8 +41,9 @@
                         <Image Source="../Assets/user.png"
                                Width="48"
                                Height="48"
-                               Stretch="UniformToFill" />
-                        <Image Source="{Binding Receiver.BitmapImage}"
+                               Stretch="UniformToFill"
+                               Visibility="{Binding Interlocutor.DefaultImageVisibility}" />
+                        <Image Source="{Binding Interlocutor.Image.Uri}"
                                Width="48"
                                Height="48"
                                Stretch="UniformToFill" />
@@ -39,7 +53,7 @@
                     </materialDesign:Card.Effect>
                 </materialDesign:Card>
                 <Grid>
-                    <mah:Badged Badge="{Binding Receiver.DisplayOnline}"
+                    <mah:Badged Badge="{Binding Interlocutor.DisplayOnline}"
                                 BadgeBackground="LightGreen"
                                 BadgeForeground="LightGreen"
                                 BadgePlacementMode="Right">
@@ -50,7 +64,7 @@
                                              HorizontalAlignment="Center"
                                              VerticalAlignment="Center"
                                              FontSize="16"
-                                             Content="{Binding Receiver}" />
+                                             Content="{Binding Interlocutor.Fullname}" />
                         </Border>
                     </mah:Badged>
                 </Grid>
@@ -72,8 +86,15 @@
                           ScrollChanged="ScrollViewer_ScrollChanged"
                           x:Name="scroll">
                 <StackPanel x:Name="stackPanel">
-                    <ItemsControl ItemsSource="{Binding Messages}"
-                                  x:Name="control">
+                    <ItemsControl ItemsSource="{Binding Interlocutor.Messages}"
+                                  x:Name="itemsControl"
+                                  VirtualizingPanel.ScrollUnit="Item"
+                                  VirtualizingPanel.IsVirtualizing="True">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type viewmodels:MessageViewModel}">
                                 <controls:MessageControl />
@@ -88,12 +109,14 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition />
             </Grid.RowDefinitions>
-            <Grid Grid.ColumnSpan="2"
+            <Grid Grid.ColumnSpan="3"
                   Height="20"
                   Visibility="{Binding EditButtonVisibility}"
                   Background="{StaticResource MaterialDesignDarkBackground}">
@@ -103,10 +126,10 @@
                                            VerticalAlignment="Center"
                                            Kind="EditAlt"
                                            Margin="5"
-                                           Foreground="{StaticResource MaterialDesignDarkForeground}"/>
+                                           Foreground="{StaticResource MaterialDesignDarkForeground}" />
                 <TextBlock Text="Редактирование"
                            Foreground="{StaticResource MaterialDesignDarkForeground}"
-                           Margin="20,0,0,0"/>
+                           Margin="20,0,0,0" />
                 <Button Style="{StaticResource MaterialDesignFlatDarkButton}"
                         HorizontalAlignment="Right"
                         Height="20"
@@ -121,7 +144,45 @@
                                                Foreground="{StaticResource MaterialDesignDarkForeground}" />
                 </Button>
             </Grid>
-            <materialDesign:Card Grid.Row="1">
+            <Grid Grid.Row="1"
+                  Grid.ColumnSpan="3">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding AttachedImages}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Button Style="{StaticResource MaterialDesignFlatDarkButton}"
+                                            Command="{Binding ElementName=viewModel, Path=DataContext.DetachImageCommand}"
+                                            CommandParameter="{Binding }"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Top"
+                                            Padding="0"
+                                            Height="10"
+                                            Width="10"
+                                            Margin="2">
+                                        <iconPacks:PackIconUnicons Width="24"
+                                                                   Height="24"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"
+                                                                   Kind="X" />
+                                    </Button>
+                                    <Image Source="{Binding Uri}"
+                                           MaxHeight="100"
+                                           MaxWidth="100"
+                                           Margin="5" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+            <materialDesign:Card Grid.Row="2">
                 <TextBox BorderThickness="0"
                          Text="{Binding SendingMessage, UpdateSourceTrigger=PropertyChanged}"
                          Padding="5"
@@ -137,34 +198,58 @@
                          MaxLines="20" />
             </materialDesign:Card>
             <Button Grid.Column="1"
-                    Grid.Row="1"
+                    Grid.Row="2"
+                    Style="{StaticResource MaterialDesignFlatDarkButton}"
+                    Command="{Binding AttachImageCommand}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Height="48"
+                    Width="48"
+                    Margin="5"
+                    Padding="0">
+                <Button.Content>
+                    <iconPacks:PackIconUnicons Width="24"
+                                               Height="24"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Kind="Paperclip" />
+                </Button.Content>
+            </Button>
+            <Button Grid.Column="2"
+                    Grid.Row="2"
                     Style="{StaticResource MaterialDesignFlatDarkButton}"
                     Command="{Binding SendMessageCommand}"
                     Visibility="{Binding SendButtonVisibility}"
                     IsDefault="True"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Height="48">
+                    Height="48"
+                    Width="48"
+                    Margin="5"
+                    Padding="0">
                 <Button.Content>
-                    <iconPacks:PackIconUnicons Width="32"
-                                               Height="32"
+                    <iconPacks:PackIconUnicons Width="24"
+                                               Height="24"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
                                                Kind="Message" />
                 </Button.Content>
             </Button>
-            <Button Grid.Column="1"
-                    Grid.Row="1"
+            <Button Grid.Column="2"
+                    Grid.Row="2"
                     Style="{StaticResource MaterialDesignFlatDarkButton}"
                     Command="{Binding EditMessageCommand}"
                     Visibility="{Binding EditButtonVisibility}"
                     IsDefault="True"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Height="48">
+                    Height="48"
+                    Width="48"
+                    Margin="5"
+                    Padding="0">
                 <Button.Content>
-                    <iconPacks:PackIconUnicons Width="32"
-                                               Height="32"
+                    <iconPacks:PackIconUnicons Width="24"
+                                               Height="24"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
                                                Kind="Check" />

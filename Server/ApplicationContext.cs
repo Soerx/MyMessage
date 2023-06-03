@@ -7,6 +7,8 @@ public class ApplicationContext : DbContext
 {
     public DbSet<UserEntity> Users { get; set; } = null!;
     public DbSet<MessageEntity> Messages { get; set; } = null!;
+    public DbSet<MessageContentEntity> MessagesContents { get; set; } = null!;
+    public DbSet<ImageEntity> Images { get; set; } = null!;
 
     public ApplicationContext()
     {

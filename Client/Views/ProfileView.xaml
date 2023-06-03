@@ -6,6 +6,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:viewmodels="clr-namespace:Client.ViewModels"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              d:DataContext="{d:DesignInstance Type=viewmodels:ProfileViewModel}"
              mc:Ignorable="d">
     <Grid>
@@ -16,6 +17,19 @@
 
         <materialDesign:Card>
             <StackPanel Margin="15">
+                <Button Style="{StaticResource MaterialDesignFlatDarkButton}"
+                        Margin="5"
+                        Padding="5"
+                        HorizontalAlignment="Left"
+                        Visibility="{Binding GoBackButtonVisibility}"
+                        Command="{Binding GoBackCommand}">
+                    <iconPacks:PackIconUnicons Width="32"
+                                               Height="32"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Center"
+                                               Kind="ArrowLeft"
+                                               Margin="5,0,0,0" />
+                </Button>
                 <materialDesign:Card UniformCornerRadius="50"
                                      Height="100"
                                      Width="100"
@@ -24,8 +38,9 @@
                         <Image Source="../Assets/user.png"
                                Width="100"
                                Height="100"
-                               Stretch="UniformToFill" />
-                        <Image Source="{Binding User.BitmapImage}"
+                               Stretch="UniformToFill"
+                               Visibility="{Binding User.DefaultImageVisibility}" />
+                        <Image Source="{Binding User.Image.Uri}"
                                Width="100"
                                Height="100"
                                Stretch="UniformToFill" />
@@ -38,7 +53,7 @@
                             BadgeBackground="LightGreen"
                             BadgeForeground="LightGreen">
                     <materialDesign:Card>
-                        <mah:MetroHeader Content="{Binding User}"
+                        <mah:MetroHeader Content="{Binding User.Fullname}"
                                          Padding="5"
                                          FontFamily="{StaticResource MaterialDesignFont}"
                                          FontWeight="Bold"

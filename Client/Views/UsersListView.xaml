@@ -42,8 +42,9 @@
                                             <Image Source="../Assets/user.png"
                                                    Width="48"
                                                    Height="48"
-                                                   Stretch="UniformToFill" />
-                                            <Image Source="{Binding BitmapImage}"
+                                                   Stretch="UniformToFill"
+                                                   Visibility="{Binding DefaultImageVisibility}" />
+                                            <Image Source="{Binding Image.Uri}"
                                                    Width="48"
                                                    Height="48"
                                                    Stretch="UniformToFill" />
@@ -52,21 +53,46 @@
                                             <DropShadowEffect ShadowDepth="0" />
                                         </materialDesign:Card.Effect>
                                     </materialDesign:Card>
-                                    <mah:Badged Badge="{Binding DisplayOnline}"
-                                                BadgeBackground="LightGreen"
-                                                BadgeForeground="LightGreen"
-                                                BadgePlacementMode="Right">
-                                        <Border Margin="15">
-                                            <mah:MetroHeader Content="{Binding }"
-                                                             Padding="5"
-                                                             FontFamily="{StaticResource MaterialDesignFont}"
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition />
+                                            <RowDefinition />
+                                        </Grid.RowDefinitions>
+                                        <mah:Badged Badge="{Binding DisplayOnline}"
+                                                    BadgeBackground="LightGreen"
+                                                    BadgeForeground="LightGreen"
+                                                    BadgePlacementMode="Right"
+                                                    HorizontalAlignment="Left">
+                                            <Border Margin="15,0">
+                                                <mah:MetroHeader Content="{Binding Fullname}"
+                                                                 Padding="5"
+                                                                 FontFamily="{StaticResource MaterialDesignFont}"
+                                                                 FontWeight="Bold"
+                                                                 VerticalAlignment="Center"
+                                                                 FontSize="16">
+                                                </mah:MetroHeader>
+                                            </Border>
+                                        </mah:Badged>
+                                        <mah:Badged Badge="{Binding DisplayUnreadMessagesCount}"
+                                                    BadgePlacementMode="Right"
+                                                    HorizontalAlignment="Left"
+                                                    Grid.Row="1">
+                                            <Border Margin="15,0">
+                                                <Grid>
+                                                    <TextBlock FontFamily="{StaticResource MaterialDesignFont}"
+                                                               VerticalAlignment="Center"
+                                                               FontSize="14">
+                                                        <Run Text="{Binding LastMessageSenderFullname, StringFormat={}{0}, Mode=OneWay}"
+                                                             FontWeight="Bold" />
+                                                        <Run Text="{Binding LastMessage.Content.Text}" />
+                                                        <Run Text="{Binding LastImageText, Mode=OneWay}"
                                                              FontWeight="Bold"
-                                                             HorizontalAlignment="Center"
-                                                             VerticalAlignment="Center"
-                                                             FontSize="16">
-                                            </mah:MetroHeader>
-                                        </Border>
-                                    </mah:Badged>
+                                                             FontStyle="Italic" />
+                                                    </TextBlock>
+                                                </Grid>
+                                            </Border>
+                                        </mah:Badged>
+                                    </Grid>
                                     <StackPanel Orientation="Horizontal"
                                                 HorizontalAlignment="Right"
                                                 Margin="15">

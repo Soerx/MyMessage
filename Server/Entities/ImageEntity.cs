@@ -3,5 +3,6 @@
 public class ImageEntity
 {
     public int Id { get; set; }
-    public byte[] Data { get; set; } = null!;
+    public string Name { get; set; } = null!;
+    public string Path { get; set; } = null!;
 }

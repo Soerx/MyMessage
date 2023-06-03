@@ -57,7 +57,7 @@ namespace Client.ViewModels
         {
             if (parameter is User user)
             {
-                _navigationStore.CurrentViewModel = new ProfileViewModel(user);
+                _navigationStore.CurrentViewModel = new ProfileViewModel(user, _navigationStore, this);
             }
         }
 
@@ -65,7 +65,7 @@ namespace Client.ViewModels
         {
             if (parameter is User user)
             {
-                _navigationStore.CurrentViewModel = new ChatViewModel(_navigationStore, _chat, user);
+                _navigationStore.CurrentViewModel = new ChatViewModel(_navigationStore, _chat, user, this);
             }
         }
     }

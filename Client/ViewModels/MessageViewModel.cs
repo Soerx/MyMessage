@@ -10,8 +10,7 @@ namespace Client.ViewModels;
 public class MessageViewModel : BindableBase
 {
     private Message _message = null!;
-    private MessageContent _content = null!;
-    private Action<MessageViewModel> _messageEditButtonClick;
+    private readonly Action<MessageViewModel> _startEditMessage;
 
     public Message Message
     {
@@ -22,32 +21,18 @@ public class MessageViewModel : BindableBase
             RaisePropertyChanged(nameof(Message));
         }
     }
-
-    public MessageContent Content
-    {
-        get => _content;
-        set
-        {
-            _content = value;
-            RaisePropertyChanged(nameof(Content));
-        }
-    }
-
-    public HorizontalAlignment MessageAlignment => Message.SenderUsername == App.Instance.CurrentUser.Username ? HorizontalAlignment.Right : HorizontalAlignment.Left;
-    public Visibility PopupVisibility => Message.SenderUsername == App.Instance.CurrentUser.Username && Message.IsDeleted == false ? Visibility.Visible : Visibility.Collapsed;
     
     public ICommand DeleteCommand { get; }
     public ICommand CopyTextCommand { get; }
-    public ICommand EditMessageCommand { get; }
+    public ICommand StartEditMessageCommand { get; }
 
-    public MessageViewModel(Message message, MessageContent content, Action<MessageViewModel> messageEditButtonClick)
+    public MessageViewModel(Message message, Action<MessageViewModel> startEditMessage)
     {
         Message = message;
-        Content = content;
         DeleteCommand = new RelayCommand(Delete);
         CopyTextCommand = new RelayCommand(CopyText);
-        EditMessageCommand = new RelayCommand(EditMessage);
-        _messageEditButtonClick = messageEditButtonClick;
+        StartEditMessageCommand = new RelayCommand(StartEditMessage);
+        _startEditMessage = startEditMessage;
     }
 
     private void Delete(object parameter)
@@ -57,11 +42,11 @@ public class MessageViewModel : BindableBase
 
     private void CopyText(object parameter)
     {
-        Clipboard.SetText(Content.Text);
+        Clipboard.SetText(Message.Content.Text);
     }
 
-    private void EditMessage(object parameter)
+    private void StartEditMessage(object parameter)
     {
-        _messageEditButtonClick(this);
+        _startEditMessage(this);
     }
 }

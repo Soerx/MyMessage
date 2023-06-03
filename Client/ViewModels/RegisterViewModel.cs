@@ -12,6 +12,7 @@ using Client.Models;
 using Client.Tools;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace Client.ViewModels;
 
@@ -218,7 +219,7 @@ public class RegisterViewModel : BindableBase, IDisposable
             _gendersWrappers.Add(new GenderWrapper(gender));
         }
 
-        SelectedGenderWrapper = new GenderWrapper(Gender.Unspecified);
+        SelectedGenderWrapper = GendersWrappers.First(gW => gW.Gender == Gender.Unspecified);
         IsAvailable = true;
     }
 
@@ -249,7 +250,7 @@ public class RegisterViewModel : BindableBase, IDisposable
         _disposed = true;
     }
 
-    private async Task Register(object parameter)
+    private async ValueTask Register(object parameter)
     {
         IsAvailable = false;
         Message = string.Empty;

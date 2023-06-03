@@ -44,18 +44,22 @@ public class Program
                 });
 
         builder.Services.AddSingleton<IUserIdProvider, ClaimUserIdProvider>();
+        builder.Services.AddScoped<ApplicationContext>();
+        builder.Services.AddControllers();
         builder.Services.AddSignalR();
 
         var app = builder.Build();
 
         app.UseDefaultFiles();
         app.UseStaticFiles();
-
+        app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.MapControllers();
 
         app.MapHub<ChatHub>("/ChatHub");
         app.MapHub<AuthHub>("/AuthHub");
+
 
         using ApplicationContext db = new();
 

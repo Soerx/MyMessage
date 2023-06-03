@@ -7,7 +7,6 @@
              xmlns:views="clr-namespace:Client.Views"
              xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
-             xmlns:materialdDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              d:DataContext="{d:DesignInstance Type=viewmodels:HomeViewModel}"
              mc:Ignorable="d"
              MinHeight="400"
@@ -101,7 +100,6 @@
 
             <Controls:HamburgerMenu.OptionsItemsSource>
                 <Controls:HamburgerMenuItemCollection>
-
                     <Controls:HamburgerMenuIconItem Label="Выход"
                                                     Command="{Binding ExitCommand}">
                         <Controls:HamburgerMenuIconItem.Icon>
