@@ -119,7 +119,7 @@ namespace Client.Services
                     else
                         interlocuter = Users.Single(u => u.Username == message.ReceiverUsername);
 
-                    interlocuter.Messages.Add(new(message, NotifyMessageEditButtonClicked));
+                    interlocuter.Messages.Add(new(message, NotifyMessageEditButtonClicked, DeleteMessage));
 
                     if (message.IsReceived is false && message.ReceiverUsername == App.Instance.CurrentUser.Username)
                         await TryExecuteAsync(async () => await UpdateMessage(message));
@@ -154,7 +154,7 @@ namespace Client.Services
             {
                 await Application.Current.Dispatcher.InvokeAsync(async () =>
                 {
-                    MessageViewModel newMessageViewModel = new(message, NotifyMessageEditButtonClicked);
+                    MessageViewModel newMessageViewModel = new(message, NotifyMessageEditButtonClicked, DeleteMessage);
                     interlocuter.Messages.Add(newMessageViewModel);
                     MessageReceived?.Invoke(newMessageViewModel);
 
@@ -217,6 +217,12 @@ namespace Client.Services
         private void NotifyMessageEditButtonClicked(MessageViewModel messageViewModel)
         {
             MessageEditButtonClicked?.Invoke(messageViewModel);
+        }
+
+        private async void DeleteMessage(Message message)
+        {
+            message.IsDeleted = true;
+            await TryExecuteAsync(async () => await UpdateMessage(message));
         }
     }
 }

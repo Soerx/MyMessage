@@ -19,7 +19,11 @@ public class Message : BindableBase
     public HorizontalAlignment MessageAlignment => SenderUsername == App.Instance.CurrentUser.Username ? HorizontalAlignment.Right : HorizontalAlignment.Left;
 
     [JsonIgnore]
-    public Visibility PopupVisibility => SenderUsername == App.Instance.CurrentUser.Username && IsDeleted == false ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility CurrentUserPopupButtonsVisibility => SenderUsername == App.Instance.CurrentUser.Username && IsDeleted == false ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility CopyButtonPopupVisibility => string.IsNullOrWhiteSpace(Content.Text) ? Visibility.Collapsed : Visibility.Visible;
+
+    public Visibility PopupVisibility => CurrentUserPopupButtonsVisibility is Visibility.Collapsed && CopyButtonPopupVisibility is Visibility.Collapsed ? Visibility.Collapsed : Visibility.Visible;
 
     public string ReceiverUsername { get; set; } = null!;
     public MessageContent Content { get; set; } = null!;
@@ -36,6 +40,9 @@ public class Message : BindableBase
                 RaisePropertyChanged(nameof(IsEdited));
                 RaisePropertyChanged(nameof(EditedMarkerVisibility));
             }
+
+            RaisePropertyChanged(nameof(CopyButtonPopupVisibility));
+            RaisePropertyChanged(nameof(PopupVisibility));
         }
     }
 

@@ -90,7 +90,8 @@
                             </StackPanel>
                         </StackPanel>
                         <materialDesign:PopupBox Grid.Column="1"
-                                                 x:Name="popup">
+                                                 x:Name="popup"
+                                                 Visibility="{Binding Message.PopupVisibility}">
                             <materialDesign:PopupBox.PopupContent>
                                 <StackPanel>
                                     <StackPanel.Resources>
@@ -100,13 +101,14 @@
                                         </Style>
                                     </StackPanel.Resources>
                                     <Button Content="Копировать"
-                                            Command="{Binding CopyTextCommand}"/>
+                                            Command="{Binding CopyTextCommand}"
+                                            Visibility="{Binding Message.CopyButtonPopupVisibility}"/>
                                     <Button Content="Изменить"
                                             Command="{Binding StartEditMessageCommand}"
-                                            Visibility="{Binding Message.PopupVisibility}" />
+                                            Visibility="{Binding Message.CurrentUserPopupButtonsVisibility}" />
                                     <Button Content="Удалить"
                                             Command="{Binding DeleteCommand}"
-                                            Visibility="{Binding Message.PopupVisibility}" />
+                                            Visibility="{Binding Message.CurrentUserPopupButtonsVisibility}" />
                                 </StackPanel>
                             </materialDesign:PopupBox.PopupContent>
                         </materialDesign:PopupBox>

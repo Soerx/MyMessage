@@ -22,19 +22,6 @@
 
             <materialDesign:Card>
                 <StackPanel Margin="15">
-                    <Button Style="{StaticResource MaterialDesignFlatDarkButton}"
-                            Margin="5"
-                            Padding="5"
-                            HorizontalAlignment="Left"
-                            Visibility="{Binding GoBackButtonVisibility}"
-                            Command="{Binding GoBackCommand}">
-                        <iconPacks:PackIconUnicons Width="32"
-                                                   Height="32"
-                                                   VerticalAlignment="Center"
-                                                   HorizontalAlignment="Center"
-                                                   Kind="ArrowLeft"
-                                                   Margin="5,0,0,0" />
-                    </Button>
                     <materialDesign:Card UniformCornerRadius="50"
                                          Height="100"
                                          Width="100"

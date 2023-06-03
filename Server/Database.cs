@@ -192,12 +192,16 @@ public static class Database
             return false;
         }
 
+        var imageEmtity = updatedUser.Image?.TryGetEntity();
+
+        if (imageEmtity is not null && realUser.Image is not null && imageEmtity.Id != realUser.Image.Id)
+            realUser.Image = imageEmtity;
+
         realUser.Firstname = updatedUser.Firstname;
         realUser.Lastname = updatedUser.Lastname;
         realUser.Birthdate = updatedUser.Birthdate;
         realUser.Gender = updatedUser.Gender;
         realUser.Status = updatedUser.Status;
-        realUser.Image = updatedUser.Image?.TryGetEntity();
         updatedUser = db.Users.Include(u => u.Image).First(u => u.Username == username && u.Username == tempUser.Username).ConvertToModel();
         db.SaveChanges();
         return true;
@@ -284,38 +288,52 @@ public static class Database
         if (realMessage.Sender.Username == username)
         {
             realMessage.Content.Text = updatedMessage.Content.Text;
-            List<ImageEntity>? imagesEntities = null;
 
             if (updatedMessage.Content.Images is not null)
             {
-                imagesEntities = new List<ImageEntity>();
+                realMessage.Content.Images ??= new();
 
-                foreach (var image in updatedMessage.Content.Images)
+                foreach (var imageModel in updatedMessage.Content.Images)
                 {
-                    var imageEntity = image.TryGetEntity();
+                    ImageEntity? imageEntity = imageModel.TryGetEntity();
 
                     if (imageEntity is not null)
                     {
-                        appContext.Attach(imageEntity);
-                        imagesEntities.Add(imageEntity);
+                        if (realMessage.Content.Images.All(i => i.Id != imageEntity.Id))
+                        {
+                            appContext.Attach(imageEntity);
+                            realMessage.Content.Images.Add(imageEntity);
+                        }
                     }
+                }
+
+                List<ImageEntity> removingImages = new();
+
+                foreach (var imageEntity in realMessage.Content.Images)
+                {
+                    if (updatedMessage.Content.Images.All(i => i.Id != imageEntity.Id))
+                        removingImages.Add(imageEntity);
+                }
+
+                int removingImagesCount = removingImages.Count;
+
+                for (int i = 0; i < removingImagesCount; i++)
+                {
+                    realMessage.Content.Images.Remove(removingImages[0]);
                 }
             }
 
-            realMessage.Content.Images = null;
-            realMessage.Content.Images = imagesEntities;
-            realMessage.IsDeleted = realMessage.IsDeleted ? true : updatedMessage.IsDeleted;
-            realMessage.IsEdited = realMessage.IsEdited ? true : updatedMessage.IsEdited;
+            realMessage.IsDeleted = realMessage.IsDeleted || updatedMessage.IsDeleted;
+            realMessage.IsEdited = realMessage.IsEdited || updatedMessage.IsEdited;
         }
         else
         {
-            realMessage.IsRead = realMessage.IsRead ? true : updatedMessage.IsRead;
+            realMessage.IsRead = realMessage.IsRead || updatedMessage.IsRead;
             realMessage.IsReceived = true;
         }
 
         updatedMessage = appContext.Messages.Include(m => m.Receiver).Include(m => m.Sender).Include(m => m.Content.Images).First(m => m.Id == realMessage.Id).ConvertToModel();
         appContext.SaveChanges();
-
         return true;
     }
 
