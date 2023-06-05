@@ -252,6 +252,7 @@
                             </Grid>
                             <TextBlock Text="{Binding Message}"
                                        Visibility="{Binding UpdateCurrentUserPasswordCommand}"
+                                       Foreground="{Binding ForegroundMessageColor}"
                                        HorizontalAlignment="Center"
                                        Margin="10"
                                        Grid.Row="6"

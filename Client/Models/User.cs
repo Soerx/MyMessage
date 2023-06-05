@@ -102,6 +102,7 @@ public class User : BindableBase, IDisposable
         }
     }
 
+    [JsonIgnore]
     public Visibility DefaultImageVisibility => Image is null ? Visibility.Visible : Visibility.Collapsed;
 
     public string? Status
@@ -177,7 +178,6 @@ public class User : BindableBase, IDisposable
 
     [JsonIgnore]
     public Visibility LastImageTextVisibility => string.IsNullOrWhiteSpace(LastMessage?.Content.Text) ? Visibility.Visible : Visibility.Collapsed;
-
 
     [JsonIgnore]
     public string? LastMessageSenderFullname => LastMessage?.SenderUsername == Username ? $"{this}:" : LastMessage?.SenderUsername == App.Instance.CurrentUser.Username ? "Вы:" : null;

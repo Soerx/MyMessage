@@ -16,6 +16,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.IO;
 using System.Linq;
+using System.Windows.Media;
 
 namespace Client.ViewModels
 {
@@ -40,7 +41,7 @@ namespace Client.ViewModels
         private Visibility _updateUserPasswordMessageVisibility;
         private string? _status;
         private ImageModel? _image;
-        private string? _errorMessage;
+        private string? _message;
         private bool _isUserUpdateAvailable;
         private bool _isUserPasswordUpdateAvailable;
 
@@ -243,17 +244,17 @@ namespace Client.ViewModels
 
         public string? Message
         {
-            get => _errorMessage ?? string.Empty;
+            get => _message ?? string.Empty;
             private set
             {
-                _errorMessage = value;
+                _message = value;
                 RaisePropertyChanged(nameof(Message));
             }
         }
 
         public string SelectImageButtonContent => Image is null ? "Выбрать изображение.." : Image.Name;
 
-        public User User => App.Instance.CurrentUser;
+        public static User User => App.Instance.CurrentUser;
 
         public ICommand UpdateCurrentUserCommand { get; }
         public ICommand UpdateCurrentUserPasswordCommand { get; }

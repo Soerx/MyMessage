@@ -8,7 +8,8 @@
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:viewmodels="clr-namespace:Client.ViewModels"
              d:DataContext="{d:DesignInstance Type=viewmodels:MessageViewModel}"
-             mc:Ignorable="d">
+             mc:Ignorable="d"
+             x:Name="viewModel">
     <mah:Badged Badge="{Binding Message.DisplayNotReadMarker}"
                 BadgeBackground="{DynamicResource MahApps.Brushes.AccentBase}"
                 BadgeForeground="{DynamicResource MahApps.Brushes.AccentBase}"
@@ -16,10 +17,10 @@
                 BadgePlacementMode="Left"
                 HorizontalAlignment="{Binding Message.MessageAlignment}"
                 Padding="15,0,0,0">
-        <materialDesign:Card Background="{DynamicResource MahApps.Brushes.Accent3}"
+        <materialDesign:Card Background="{Binding Message.BackgroundColor}"
                              Margin="2"
                              Padding="5"
-                             MaxWidth="500">
+                             MaxWidth="600">
             <Grid>
                 <Grid Visibility="{Binding Message.MessageDeletedWarnVisibility}">
                     <StackPanel>
@@ -47,14 +48,14 @@
                             <ItemsControl ItemsSource="{Binding Message.Content.Images}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
-                                        <UniformGrid />
+                                        <UniformGrid Columns="{Binding ElementName=viewModel, Path=DataContext.Message.Content.DisplayGridImagesColumnsCount}" />
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Image Source="{Binding Uri}"
-                                               MaxHeight="200"
-                                               MaxWidth="150"
+                                               MaxHeight="300"
+                                               MaxWidth="300"
                                                Margin="5" />
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>

@@ -194,7 +194,7 @@ public static class Database
 
         var imageEmtity = updatedUser.Image?.TryGetEntity();
 
-        if (imageEmtity is not null && realUser.Image is not null && imageEmtity.Id != realUser.Image.Id)
+        if (imageEmtity is not null && (realUser.Image is null || imageEmtity.Id != realUser.Image.Id))
             realUser.Image = imageEmtity;
 
         realUser.Firstname = updatedUser.Firstname;

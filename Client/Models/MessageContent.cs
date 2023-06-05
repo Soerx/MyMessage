@@ -1,5 +1,6 @@
 ﻿using Prism.Mvvm;
 using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
 
 namespace Client.Models;
 
@@ -7,6 +8,7 @@ public class MessageContent : BindableBase
 {
     private string? _text;
     private ObservableCollection<ImageModel>? _images;
+    private const int MAX_DISPLAY_GRID_IMAGES_COLUMNS_COUNT = 3;
 
     public int Id { get; set; }
 
@@ -27,6 +29,10 @@ public class MessageContent : BindableBase
         {
             _images = value;
             RaisePropertyChanged(nameof(Images));
+            RaisePropertyChanged(nameof(DisplayGridImagesColumnsCount));
         }
     }
+
+    [JsonIgnore]
+    public int? DisplayGridImagesColumnsCount => Images?.Count > MAX_DISPLAY_GRID_IMAGES_COLUMNS_COUNT ? MAX_DISPLAY_GRID_IMAGES_COLUMNS_COUNT : Images?.Count;
 }

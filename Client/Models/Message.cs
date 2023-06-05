@@ -2,6 +2,7 @@ using Prism.Mvvm;
 using System;
 using System.Text.Json.Serialization;
 using System.Windows;
+using System.Windows.Media;
 
 namespace Client.Models;
 
@@ -19,10 +20,15 @@ public class Message : BindableBase
     public HorizontalAlignment MessageAlignment => SenderUsername == App.Instance.CurrentUser.Username ? HorizontalAlignment.Right : HorizontalAlignment.Left;
 
     [JsonIgnore]
+    public Brush BackgroundColor => SenderUsername == App.Instance.CurrentUser.Username ? (SolidColorBrush)App.Current.TryFindResource("MahApps.Brushes.Accent2") : (SolidColorBrush)App.Current.TryFindResource("MahApps.Brushes.Accent4");
+
+    [JsonIgnore]
     public Visibility CurrentUserPopupButtonsVisibility => SenderUsername == App.Instance.CurrentUser.Username && IsDeleted == false ? Visibility.Visible : Visibility.Collapsed;
 
+    [JsonIgnore]
     public Visibility CopyButtonPopupVisibility => string.IsNullOrWhiteSpace(Content.Text) ? Visibility.Collapsed : Visibility.Visible;
 
+    [JsonIgnore]
     public Visibility PopupVisibility => CurrentUserPopupButtonsVisibility is Visibility.Collapsed && CopyButtonPopupVisibility is Visibility.Collapsed ? Visibility.Collapsed : Visibility.Visible;
 
     public string ReceiverUsername { get; set; } = null!;
